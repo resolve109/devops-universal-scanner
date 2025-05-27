@@ -45,11 +45,14 @@ Utility Commands:
   - auto-detect <file>                    # Detects file type and cloud provider
 
 ====== LEGACY TOOLS ======
-  - entrypoint <yaml_file> <log_file> [aws_profile]
-  - run-linter [options] [file]
+  - uat-setup setup                                 # Environment setup and validation
+  - uat-setup scan-tf <directory>                   # Terraform scan with logging
+  - uat-setup scan-cf <file>                        # CloudFormation scan with logging
+  - auto-detect <file>                              # Auto-detect file type
 
 For more detailed help on each tool:
   - Run any tool with --help flag (e.g., checkov-tool --help)
+  - Run uat-setup --help for full setup options
 
 To use these tools with your files, mount a volume to /work:
 docker run -v /path/to/your/files:/work devops-universal-scanner:latest smart-validate mytemplate.yaml

@@ -107,8 +107,8 @@ docker run --rm -v "%CD%":/work spd109/devops-uat:latest scan-terraform terrafor
 For backwards compatibility, these legacy commands are still available:
 
 ```bash
-# Legacy CloudFormation scanning
-docker run --rm -v "%cd%":/work spd109/devops-uat:latest entrypoint template.yaml report.txt
+# Environment setup and validation
+docker run --rm -v "%cd%":/work spd109/devops-uat:latest uat-setup setup
 
 # Auto-detect file type (experimental)
 docker run --rm -v "%cd%":/work spd109/devops-uat:latest auto-detect template.yaml

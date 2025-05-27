@@ -19,7 +19,8 @@ scan-cloudformation S3.yaml       # Scan specific CloudFormation file
 ### Legacy Commands (Still Available)
 
 ```bash
-entrypoint template.yaml report.txt    # Legacy CloudFormation scanning
+uat-setup setup                     # Environment setup and tool validation  
+auto-detect template.yaml           # Auto-detect file type
 ```
 
 ### Advanced Commands (Experimental)
@@ -27,6 +28,8 @@ entrypoint template.yaml report.txt    # Legacy CloudFormation scanning
 ```bash
 auto-detect template.yaml              # Auto-detect file type
 smart-validate template.yaml           # Smart validation with auto-detection
+uat-setup scan-tf terraform            # Setup + Terraform scan with logging
+uat-setup scan-cf S3.yaml              # Setup + CloudFormation scan with logging
 ```
 
 ### Built-in Tools

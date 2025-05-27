@@ -2,16 +2,25 @@
 
 ## ✅ SUCCESS! The container now has simple commands built-in:
 
-### 🔹 For Terraform (Azure):
+### 🔹 For Terraform:
 ```bash
 # Simple command - just point to the terraform directory
-docker run -it --rm -v "%cd%:/work" devops-uat:latest scan-terraform /work/terraform
+docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform
 ```
 
 ### 🔹 For CloudFormation (AWS):
 ```bash
 # Simple command - just point to the CloudFormation file
-docker run -it --rm -v "%cd%:/work" devops-uat:latest scan-cloudformation /work/S3.yaml
+docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation S3.yaml
+```
+
+### 🔹 For Environment Setup + Scanning with Logging:
+```bash
+# Setup environment and run Terraform scan with detailed logging
+docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest uat-setup scan-tf terraform
+
+# Setup environment and run CloudFormation scan with detailed logging
+docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest uat-setup scan-cf S3.yaml
 ```
 
 ## What the Scripts Do:

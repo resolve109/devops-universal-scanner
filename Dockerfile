@@ -66,11 +66,10 @@ RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/
 RUN mkdir -p /usr/local/bin/tools
 
 # Copy scripts to the tools directory
-COPY entrypoint.sh /usr/local/bin/tools/
-COPY run-linter.sh /usr/local/bin/tools/
 COPY docker-tools-help.sh /usr/local/bin/tools/
 COPY scan-terraform.sh /usr/local/bin/tools/
 COPY scan-cloudformation.sh /usr/local/bin/tools/
+COPY uat-setup.sh /usr/local/bin/tools/
 COPY CONTAINER-README.md /usr/local/bin/tools/
 
 # Create auto-detection script
@@ -165,19 +164,17 @@ exit 1\n\
 ' > /usr/local/bin/tools/auto-detect.sh
 
 # Make scripts executable
-RUN chmod +x /usr/local/bin/tools/entrypoint.sh && \
-    chmod +x /usr/local/bin/tools/run-linter.sh && \
-    chmod +x /usr/local/bin/tools/docker-tools-help.sh && \
+RUN chmod +x /usr/local/bin/tools/docker-tools-help.sh && \
     chmod +x /usr/local/bin/tools/scan-terraform.sh && \
     chmod +x /usr/local/bin/tools/scan-cloudformation.sh && \
+    chmod +x /usr/local/bin/tools/uat-setup.sh && \
     chmod +x /usr/local/bin/tools/auto-detect.sh
 
 # Create symbolic links in /usr/local/bin for easier access
-RUN ln -s /usr/local/bin/tools/entrypoint.sh /usr/local/bin/entrypoint && \
-    ln -s /usr/local/bin/tools/run-linter.sh /usr/local/bin/run-linter && \
-    ln -s /usr/local/bin/tools/docker-tools-help.sh /usr/local/bin/docker-tools-help && \
+RUN ln -s /usr/local/bin/tools/docker-tools-help.sh /usr/local/bin/docker-tools-help && \
     ln -s /usr/local/bin/tools/scan-terraform.sh /usr/local/bin/scan-terraform && \
     ln -s /usr/local/bin/tools/scan-cloudformation.sh /usr/local/bin/scan-cloudformation && \
+    ln -s /usr/local/bin/tools/uat-setup.sh /usr/local/bin/uat-setup && \
     ln -s /usr/local/bin/tools/auto-detect.sh /usr/local/bin/auto-detect
 
 # Create update script with weekly caching
