@@ -20,7 +20,6 @@ scan-cloudformation S3.yaml       # Scan specific CloudFormation file
 
 ```bash
 entrypoint template.yaml report.txt    # Legacy CloudFormation scanning
-run-linter terraform report.txt        # Legacy Terraform scanning
 ```
 
 ### Advanced Commands (Experimental)
@@ -33,6 +32,7 @@ smart-validate template.yaml           # Smart validation with auto-detection
 ### Built-in Tools
 
 **Tested & Supported:**
+
 - **Terraform**: terraform, tflint, tfsec, checkov
 - **CloudFormation**: cfn-lint, checkov, aws-cli
 - **Security**: checkov, tfsec, detect-secrets

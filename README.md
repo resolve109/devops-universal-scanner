@@ -72,42 +72,9 @@ docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terr
 docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation S3.yaml
 ```
 
-### Even Simpler with Wrapper Scripts
-
-Create these simple wrapper scripts:
-
-**scan-tf.bat** (Windows):
-
-```batch
-@echo off
-if "%1"=="" (
-    echo Usage: scan-tf.bat terraform
-    exit /b 1
-)
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform %1
-```
-
-**scan-cf.bat** (Windows):
-
-```batch
-@echo off
-if "%1"=="" (
-    echo Usage: scan-cf.bat S3.yaml
-    exit /b 1
-)
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation %1
-```
-
-Then simply run:
-
-```cmd
-scan-tf.bat terraform
-scan-cf.bat S3.yaml
-```
-
 ### Advanced Usage
 
-Use the scanning commands with various options:
+Use the tested scanning commands with various options:
 
 #### Linux/macOS
 
@@ -143,6 +110,6 @@ For backwards compatibility, these legacy commands are still available:
 # Legacy CloudFormation scanning
 docker run --rm -v "%cd%":/work spd109/devops-uat:latest entrypoint template.yaml report.txt
 
-# Legacy Terraform scanning  
-docker run --rm -v "%cd%":/work spd109/devops-uat:latest run-linter terraform report.txt
+# Auto-detect file type (experimental)
+docker run --rm -v "%cd%":/work spd109/devops-uat:latest auto-detect template.yaml
 ```
