@@ -1,0 +1,74 @@
+# Docker Hub credentials and sensitive data
+dockerhub-credentials.txt
+dockerhub.key
+.dockercfg
+.docker/config.json
+docker-credentials.json
+push-to-dockerhub.bat
+push-to-dockerhub.sh
+dockerhub-config.bat
+dockerhub-config.sh
+*-dockerhub*.bat
+*-dockerhub*.sh
+
+# Automatically generated validation reports
+validation-*.txt
+
+# Environment variables files that might contain secrets
+.env
+*.env
+.env.local
+.env.*.local
+
+# AWS credentials that might be used for validation
+aws-credentials.txt
+aws-config.txt
+.aws/
+
+# Personal configuration files
+*-personal.*
+*-secret.*
+*-private.*
+
+# Authentication tokens
+*.token
+token.txt
+secret.txt
+api-keys.txt
+
+# Logs
+*.log
+logs/
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Build/temp directories
+/dist/
+/build/
+/tmp/
+/temp/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+
+#terrform
+*.tfstate
+*.tfstate.backup
+*.tfvars
+# Terraform plan files
+*.tfplan
+# Terraform lock files
+*.terraform.lock.hcl
+# Terraform workspace files
+.terraform/
+
+#docker-push
+push-to-dockerhub.bat
+push-to-dockerhub.sh    
