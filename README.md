@@ -8,16 +8,23 @@ This repository contains the source code for building a Docker image that includ
 
 ## Features
 
-- **Simple Commands**: Easy-to-use scan commands for Terraform and CloudFormation
-- **Current Support**: Validates infrastructure templates for:
+- **Simple Commands**: Easy-to-use scan commands for Terraform, CloudFormation, and Docker images
+- **Current Support**: Validates infrastructure templates and container images for:
   - AWS (CloudFormation)
   - Cross-platform (Terraform)
+  - Docker container images
 
 - **Comprehensive Validation**: Includes various validation tools:
   - Syntax and structural validation
   - Security scanning with checkov and tfsec  
   - Linting and best practices with cfn-lint and tflint
+  - Container vulnerability scanning with Trivy
   - Secret detection
+  
+- **JSON Report Output**: All scanners generate structured JSON reports:
+  - `terraform-scan-report.json` (TFLint, TFSec, Checkov results)
+  - `cloudformation-scan-report.json` (CFN-Lint, Checkov, AWS validation)
+  - `trivy-report.json` (Container vulnerabilities, secrets, misconfigurations)
   
 - **Auto-Updating**: Tools automatically update to latest versions on container start  
 - **Cross-platform**: Works on:
@@ -35,9 +42,11 @@ This repository contains the source code for building a Docker image that includ
 
 **✅ Tested & Working:**
 
-- AWS CloudFormation template validation (tested with S3.yaml)
-- Terraform configuration validation (tested with 12 .tf files)
-- Simple scan commands: `scan-terraform` and `scan-cloudformation`
+- AWS CloudFormation template validation with JSON output (tested with S3.yaml)
+- Terraform configuration validation with JSON output (tested with multiple .tf files)
+- Docker container image scanning with JSON output (tested with Trivy)
+- Simple scan commands: `scan-terraform`, `scan-cloudformation`, and `scan-docker`
+- All scanners now generate structured JSON reports for integration with CI/CD pipelines
 
 **⚠️ Available but Untested:**
 
@@ -72,6 +81,16 @@ docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terr
 docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation S3.yaml
 ```
 
+### For Docker Images
+
+```bash
+# Simple command - just specify the image name and tag
+docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
+
+# Scan a custom application image
+docker run -it --rm spd109/devops-uat:latest scan-docker myapp:1.0.0
+```
+
 ### Advanced Usage
 
 Use the tested scanning commands with various options:
@@ -90,6 +109,10 @@ docker run --rm -v $(pwd):/work \
   -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
   spd109/devops-uat:latest scan-cloudformation template.yaml
+
+# Scan Docker container images
+docker run --rm spd109/devops-uat:latest scan-docker nginx:latest
+docker run --rm spd109/devops-uat:latest scan-docker ubuntu:22.04
 ```
 
 #### Windows (Command Prompt)
@@ -100,6 +123,10 @@ docker run --rm -v "%CD%":/work spd109/devops-uat:latest scan-cloudformation you
 
 REM Validate a Terraform directory
 docker run --rm -v "%CD%":/work spd109/devops-uat:latest scan-terraform terraform\
+
+REM Scan Docker container images  
+docker run --rm spd109/devops-uat:latest scan-docker nginx:latest
+docker run --rm spd109/devops-uat:latest scan-docker spd109/devops-uat:latest
 ```
 
 ### Legacy Commands (Still Available)
