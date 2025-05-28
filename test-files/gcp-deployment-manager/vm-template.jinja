@@ -1,0 +1,117 @@
+{#
+GCP Deployment Manager Jinja2 template for VM instance
+This template contains intentional security vulnerabilities for testing
+#}
+
+resources:
+- name: {{ env["name"] }}
+  type: compute.v1.instance
+  properties:
+    zone: {{ properties["zone"] }}
+    machineType: zones/{{ properties["zone"] }}/machineTypes/{{ properties["machineType"] }}
+    
+    # Issue: No shielded VM configuration
+    shieldedInstanceConfig:
+      enableSecureBoot: false
+      enableVtpm: false
+      enableIntegrityMonitoring: false
+    
+    # Issue: Preemptible not considered for cost optimization
+    scheduling:
+      preemptible: false
+      automaticRestart: true
+      onHostMaintenance: MIGRATE
+    
+    disks:
+    - deviceName: boot
+      type: PERSISTENT
+      boot: true
+      autoDelete: true
+      initializeParams:
+        sourceImage: projects/debian-cloud/global/images/family/debian-11
+        diskType: zones/{{ properties["zone"] }}/diskTypes/{{ properties["bootDiskType"] }}
+        diskSizeGb: {{ properties["bootDiskSize"] }}
+        # Issue: No disk encryption with customer-managed keys
+        # diskEncryptionKey: not specified
+    
+    networkInterfaces:
+    - network: global/networks/default
+      # Issue: External IP assigned by default
+      accessConfigs:
+      - name: External NAT
+        type: ONE_TO_ONE_NAT
+        # Issue: No static IP reservation
+    
+    # Issue: Using default service account
+    serviceAccounts:
+    - email: "{{ properties.get('serviceAccount', 'default') }}"
+      scopes:
+      # Issue: Overly broad scopes
+      - https://www.googleapis.com/auth/cloud-platform
+      - https://www.googleapis.com/auth/compute
+      - https://www.googleapis.com/auth/devstorage.full_control
+      - https://www.googleapis.com/auth/logging.write
+      - https://www.googleapis.com/auth/monitoring.write
+    
+    metadata:
+      items:
+      {% if properties.get("metadata") %}
+      {% for key, value in properties["metadata"].items() %}
+      - key: {{ key }}
+        value: |
+          {{ value | indent(10) }}
+      {% endfor %}
+      {% endif %}
+      # Issue: Block project-wide SSH keys disabled
+      - key: block-project-ssh-keys
+        value: "false"
+      
+      # Issue: IP forwarding enabled (potential security risk)
+      - key: ip-forwarding
+        value: "true"
+    
+    canIpForward: true
+    
+    tags:
+      items:
+      # Issue: Generic tags that might apply broad firewall rules
+      - webserver
+      - database
+      - development
+      # Issue: Sensitive information in tags
+      - admin-access
+      - internal-only
+
+# Issue: Create firewall rules that are too permissive
+{% if properties["networkConfig"]["allowSsh"] %}
+- name: {{ env["name"] }}-allow-ssh
+  type: compute.v1.firewall
+  properties:
+    allowed:
+    - IPProtocol: tcp
+      ports: ["22"]
+    sourceRanges: {{ properties["networkConfig"]["sshSourceRanges"] }}
+    targetTags: [{{ env["name"] }}]
+{% endif %}
+
+{% if properties["networkConfig"]["allowHttp"] %}
+- name: {{ env["name"] }}-allow-http
+  type: compute.v1.firewall
+  properties:
+    allowed:
+    - IPProtocol: tcp
+      ports: ["80", "8080"]
+    sourceRanges: {{ properties["networkConfig"]["httpSourceRanges"] }}
+    targetTags: [{{ env["name"] }}]
+{% endif %}
+
+{% if properties["networkConfig"]["allowHttps"] %}
+- name: {{ env["name"] }}-allow-https
+  type: compute.v1.firewall
+  properties:
+    allowed:
+    - IPProtocol: tcp
+      ports: ["443", "8443"]
+    sourceRanges: ["0.0.0.0/0"]
+    targetTags: [{{ env["name"] }}]
+{% endif %}

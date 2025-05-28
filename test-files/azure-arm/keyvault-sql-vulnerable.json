@@ -1,0 +1,297 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "description": "Azure ARM template with intentional Key Vault and SQL security vulnerabilities"
+  },
+  "parameters": {
+    "keyVaultName": {
+      "type": "string",
+      "defaultValue": "vulnerable-keyvault-123",
+      "metadata": {
+        "description": "Name of the Key Vault"
+      }
+    },
+    "sqlServerName": {
+      "type": "string",
+      "defaultValue": "[concat('vulnerable-sql-', uniqueString(resourceGroup().id))]",
+      "metadata": {
+        "description": "Name of the SQL Server"
+      }
+    },
+    "sqlAdminLogin": {
+      "type": "string",
+      "defaultValue": "sqladmin",
+      "metadata": {
+        "description": "SQL Server administrator login"
+      }
+    },
+    "sqlAdminPassword": {
+      "type": "string",
+      "defaultValue": "Password123!",
+      "metadata": {
+        "description": "SQL Server administrator password"
+      }
+    },
+    "databaseName": {
+      "type": "string",
+      "defaultValue": "VulnerableDatabase",
+      "metadata": {
+        "description": "Name of the SQL Database"
+      }
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]",
+      "metadata": {
+        "description": "Location for all resources"
+      }
+    }
+  },
+  "variables": {
+    "tenantId": "[subscription().tenantId]",
+    "keyVaultSku": "Standard"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.KeyVault/vaults",
+      "apiVersion": "2022-07-01",
+      "name": "[parameters('keyVaultName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "enabledForDeployment": true,
+        "enabledForTemplateDeployment": true,
+        "enabledForDiskEncryption": true,
+        "tenantId": "[variables('tenantId')]",
+        "sku": {
+          "name": "[variables('keyVaultSku')]",
+          "family": "A"
+        },
+        "accessPolicies": [
+          {
+            "tenantId": "[variables('tenantId')]",
+            "objectId": "00000000-0000-0000-0000-000000000000",
+            "permissions": {
+              "keys": [
+                "all"
+              ],
+              "secrets": [
+                "all"
+              ],
+              "certificates": [
+                "all"
+              ]
+            }
+          }
+        ],
+        "networkAcls": {
+          "bypass": "AzureServices",
+          "defaultAction": "Allow",
+          "ipRules": [],
+          "virtualNetworkRules": []
+        },
+        "enableSoftDelete": false,
+        "enablePurgeProtection": false,
+        "softDeleteRetentionInDays": 7,
+        "enableRbacAuthorization": false,
+        "publicNetworkAccess": "Enabled"
+      },
+      "tags": {
+        "Environment": "production",
+        "AdminPassword": "admin123",
+        "DatabaseConnectionString": "Server=tcp:server.database.windows.net,1433;Database=mydb;User ID=admin;Password=Password123!;"
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2022-07-01",
+      "name": "[concat(parameters('keyVaultName'), '/DatabasePassword')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ],
+      "properties": {
+        "value": "[parameters('sqlAdminPassword')]",
+        "contentType": "text/plain",
+        "attributes": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2022-07-01",
+      "name": "[concat(parameters('keyVaultName'), '/ApiKey')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+      ],
+      "properties": {
+        "value": "sk-1234567890abcdefghijklmnopqrstuvwxyz",
+        "contentType": "text/plain",
+        "attributes": {
+          "enabled": true
+        }
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[parameters('sqlServerName')]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[parameters('sqlAdminLogin')]",
+        "administratorLoginPassword": "[parameters('sqlAdminPassword')]",
+        "version": "12.0",
+        "publicNetworkAccess": "Enabled",
+        "restrictOutboundNetworkAccess": "Disabled",
+        "minimalTlsVersion": "1.0"
+      },
+      "tags": {
+        "Environment": "production",
+        "AdminLogin": "[parameters('sqlAdminLogin')]",
+        "AdminPassword": "[parameters('sqlAdminPassword')]"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/AllowAllWindowsAzureIps')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+      ],
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "0.0.0.0"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/firewallRules",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/AllowAllIPs')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+      ],
+      "properties": {
+        "startIpAddress": "0.0.0.0",
+        "endIpAddress": "255.255.255.255"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/databases",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/', parameters('databaseName'))]",
+      "location": "[parameters('location')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+      ],
+      "sku": {
+        "name": "Basic",
+        "tier": "Basic",
+        "capacity": 5
+      },
+      "properties": {
+        "collation": "SQL_Latin1_General_CP1_CI_AS",
+        "maxSizeBytes": 2147483648,
+        "catalogCollation": "SQL_Latin1_General_CP1_CI_AS",
+        "zoneRedundant": false,
+        "readScale": "Disabled",
+        "requestedBackupStorageRedundancy": "Local",
+        "isLedgerOn": false,
+        "availabilityZone": "NoPreference"
+      },
+      "tags": {
+        "Environment": "production",
+        "ConnectionString": "[concat('Server=tcp:', parameters('sqlServerName'), '.database.windows.net,1433;Database=', parameters('databaseName'), ';User ID=', parameters('sqlAdminLogin'), ';Password=', parameters('sqlAdminPassword'), ';')]"
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/auditingSettings",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+      ],
+      "properties": {
+        "state": "Disabled",
+        "retentionDays": 0,
+        "auditActionsAndGroups": [],
+        "storageAccountAccessKey": "",
+        "storageEndpoint": "",
+        "isStorageSecondaryKeyInUse": false,
+        "isAzureMonitorTargetEnabled": false
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/securityAlertPolicies",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]"
+      ],
+      "properties": {
+        "state": "Disabled",
+        "disabledAlerts": [
+          "Sql_Injection",
+          "Sql_Injection_Vulnerability",
+          "Access_Anomaly"
+        ],
+        "emailAddresses": [],
+        "emailAccountAdmins": false,
+        "retentionDays": 0
+      }
+    },
+    {
+      "type": "Microsoft.Sql/servers/vulnerabilityAssessments",
+      "apiVersion": "2022-05-01-preview",
+      "name": "[concat(parameters('sqlServerName'), '/default')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))]",
+        "[resourceId('Microsoft.Sql/servers/securityAlertPolicies', parameters('sqlServerName'), 'default')]"
+      ],
+      "properties": {
+        "recurringScans": {
+          "isEnabled": false,
+          "emailSubscriptionAdmins": false,
+          "emails": []
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "keyVaultName": {
+      "type": "string",
+      "value": "[parameters('keyVaultName')]"
+    },
+    "keyVaultResourceId": {
+      "type": "string",
+      "value": "[resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))]"
+    },
+    "keyVaultUri": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.KeyVault/vaults', parameters('keyVaultName'))).vaultUri]"
+    },
+    "sqlServerName": {
+      "type": "string",
+      "value": "[parameters('sqlServerName')]"
+    },
+    "sqlServerFqdn": {
+      "type": "string",
+      "value": "[reference(resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))).fullyQualifiedDomainName]"
+    },
+    "databaseName": {
+      "type": "string",
+      "value": "[parameters('databaseName')]"
+    },
+    "sqlAdminLogin": {
+      "type": "string",
+      "value": "[parameters('sqlAdminLogin')]"
+    },
+    "sqlAdminPassword": {
+      "type": "string",
+      "value": "[parameters('sqlAdminPassword')]"
+    },
+    "connectionString": {
+      "type": "string",
+      "value": "[concat('Server=tcp:', reference(resourceId('Microsoft.Sql/servers', parameters('sqlServerName'))).fullyQualifiedDomainName, ',1433;Database=', parameters('databaseName'), ';User ID=', parameters('sqlAdminLogin'), ';Password=', parameters('sqlAdminPassword'), ';')]"
+    }
+  }
+}

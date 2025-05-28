@@ -67,11 +67,16 @@ RUN mkdir -p /usr/local/bin/tools
 
 # Copy scripts to the tools directory
 COPY docker-tools-help.sh /usr/local/bin/tools/
-COPY scan-terraform.sh /usr/local/bin/tools/
-COPY scan-cloudformation.sh /usr/local/bin/tools/
-COPY scan-docker.sh /usr/local/bin/tools/
+COPY scanners/scan-terraform.sh /usr/local/bin/tools/
+COPY scanners/scan-cloudformation.sh /usr/local/bin/tools/
+COPY scanners/scan-docker.sh /usr/local/bin/tools/
+COPY scanners/scan-arm.sh /usr/local/bin/tools/
+COPY scanners/scan-bicep.sh /usr/local/bin/tools/
+COPY scanners/scan-gcp.sh /usr/local/bin/tools/
 COPY uat-setup.sh /usr/local/bin/tools/
-COPY CONTAINER-README.md /usr/local/bin/tools/
+
+# Copy helper modules
+COPY helpers/ /usr/local/bin/helpers/
 
 # Create auto-detection script
 RUN echo '#!/bin/bash\n\
@@ -169,6 +174,9 @@ RUN chmod +x /usr/local/bin/tools/docker-tools-help.sh && \
     chmod +x /usr/local/bin/tools/scan-terraform.sh && \
     chmod +x /usr/local/bin/tools/scan-cloudformation.sh && \
     chmod +x /usr/local/bin/tools/scan-docker.sh && \
+    chmod +x /usr/local/bin/tools/scan-arm.sh && \
+    chmod +x /usr/local/bin/tools/scan-bicep.sh && \
+    chmod +x /usr/local/bin/tools/scan-gcp.sh && \
     chmod +x /usr/local/bin/tools/uat-setup.sh && \
     chmod +x /usr/local/bin/tools/auto-detect.sh
 
@@ -177,6 +185,9 @@ RUN ln -s /usr/local/bin/tools/docker-tools-help.sh /usr/local/bin/docker-tools-
     ln -s /usr/local/bin/tools/scan-terraform.sh /usr/local/bin/scan-terraform && \
     ln -s /usr/local/bin/tools/scan-cloudformation.sh /usr/local/bin/scan-cloudformation && \
     ln -s /usr/local/bin/tools/scan-docker.sh /usr/local/bin/scan-docker && \
+    ln -s /usr/local/bin/tools/scan-arm.sh /usr/local/bin/scan-azure-arm && \
+    ln -s /usr/local/bin/tools/scan-bicep.sh /usr/local/bin/scan-azure-bicep && \
+    ln -s /usr/local/bin/tools/scan-gcp.sh /usr/local/bin/scan-gcp && \
     ln -s /usr/local/bin/tools/uat-setup.sh /usr/local/bin/uat-setup && \
     ln -s /usr/local/bin/tools/auto-detect.sh /usr/local/bin/auto-detect
 
