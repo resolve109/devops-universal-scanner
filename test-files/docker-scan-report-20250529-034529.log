@@ -1,0 +1,78 @@
+=================================================================
+              DOCKER IMAGE SECURITY SCAN REPORT
+=================================================================
+Target: /work/docker/Dockerfile.vulnerable
+Scan Started: Thu May 29 03:45:29 UTC 2025
+Scanner: Trivy (Multi-purpose vulnerability scanner)
+=================================================================
+
+
+============================================================
+[2025-05-29 03:45:29] DOCKER IMAGE SCAN STARTING
+============================================================
+[2025-05-29 03:45:29] Scanning Docker image: /work/docker/Dockerfile.vulnerable
+
+============================================================
+[2025-05-29 03:45:29] DOCKER ENVIRONMENT CHECK
+============================================================
+[2025-05-29 03:45:29] ⚠️  WARNING: Docker CLI not available - Trivy will pull from registry
+
+============================================================
+[2025-05-29 03:45:29] TRIVY VULNERABILITY SCAN (HIGH & CRITICAL)
+============================================================
+[2025-05-29 03:45:29] Scanning for HIGH and CRITICAL vulnerabilities...
+
+2025-05-29T03:45:30Z	INFO	Need to update DB
+2025-05-29T03:45:30Z	INFO	Downloading DB...	repository="ghcr.io/aquasecurity/trivy-db:2"
+4.33 MiB / 64.40 MiB [---->__________________________________________________________] 6.73% ? p/s ?9.08 MiB / 64.40 MiB [-------->_____________________________________________________] 14.10% ? p/s ?13.80 MiB / 64.40 MiB [------------->_______________________________________________] 21.43% ? p/s ?19.49 MiB / 64.40 MiB [-------------->_________________________________] 30.26% 25.24 MiB p/s ETA 1s25.10 MiB / 64.40 MiB [------------------>_____________________________] 38.97% 25.24 MiB p/s ETA 1s30.68 MiB / 64.40 MiB [---------------------->_________________________] 47.63% 25.24 MiB p/s ETA 1s36.22 MiB / 64.40 MiB [-------------------------->_____________________] 56.24% 25.41 MiB p/s ETA 1s41.99 MiB / 64.40 MiB [------------------------------->________________] 65.19% 25.41 MiB p/s ETA 0s48.22 MiB / 64.40 MiB [----------------------------------->____________] 74.87% 25.41 MiB p/s ETA 0s54.21 MiB / 64.40 MiB [---------------------------------------->_______] 84.17% 25.70 MiB p/s ETA 0s60.11 MiB / 64.40 MiB [-------------------------------------------->___] 93.34% 25.70 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 25.70 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 25.14 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 25.14 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 25.14 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 23.52 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 23.52 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 23.52 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 22.00 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 22.00 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 22.00 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [---------------------------------------------->] 100.00% 20.58 MiB p/s ETA 0s64.40 MiB / 64.40 MiB [-------------------------------------------------] 100.00% 15.28 MiB p/s 4.4s2025-05-29T03:45:35Z	INFO	Vulnerability scanning is enabled
+2025-05-29T03:45:35Z	INFO	Secret scanning is enabled
+2025-05-29T03:45:35Z	INFO	If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-05-29T03:45:35Z	INFO	Please see also https://aquasecurity.github.io/trivy/v0.52/docs/scanner/secret/#recommendation for faster secret detection
+2025-05-29T03:45:35Z	FATAL	Fatal error	image scan error: scan error: unable to initialize a scanner: unable to initialize an image scanner: failed to parse the image name: could not parse reference: /work/docker/Dockerfile.vulnerable
+[2025-05-29 03:45:35] ✅ SUCCESS: Vulnerability scan completed
+
+============================================================
+[2025-05-29 03:45:35] TRIVY SECRET DETECTION
+============================================================
+[2025-05-29 03:45:35] Scanning for exposed secrets and sensitive data...
+
+2025-05-29T03:45:35Z	INFO	Secret scanning is enabled
+2025-05-29T03:45:35Z	INFO	If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-05-29T03:45:35Z	INFO	Please see also https://aquasecurity.github.io/trivy/v0.52/docs/scanner/secret/#recommendation for faster secret detection
+2025-05-29T03:45:35Z	FATAL	Fatal error	image scan error: scan error: unable to initialize a scanner: unable to initialize an image scanner: failed to parse the image name: could not parse reference: /work/docker/Dockerfile.vulnerable
+[2025-05-29 03:45:35] ✅ SUCCESS: Secret detection scan completed
+
+============================================================
+[2025-05-29 03:45:35] TRIVY CONFIGURATION SCAN
+============================================================
+[2025-05-29 03:45:35] Scanning for misconfigurations...
+
+2025-05-29T03:45:36Z	WARN	'--scanners config' is deprecated. Use '--scanners misconfig' instead. See https://github.com/aquasecurity/trivy/discussions/5586 for the detail.
+2025-05-29T03:45:36Z	INFO	Misconfiguration scanning is enabled
+2025-05-29T03:45:36Z	INFO	Need to update the built-in policies
+2025-05-29T03:45:36Z	INFO	Downloading the built-in policies...
+74.86 KiB / 74.86 KiB [--------------------------------------------------------] 100.00% ? p/s 100ms2025-05-29T03:45:37Z	FATAL	Fatal error	image scan error: scan error: unable to initialize a scanner: unable to initialize an image scanner: failed to parse the image name: could not parse reference: /work/docker/Dockerfile.vulnerable
+[2025-05-29 03:45:37] ✅ SUCCESS: Configuration scan completed
+
+============================================================
+[2025-05-29 03:45:37] COMPREHENSIVE TRIVY SCAN (JSON OUTPUT)
+============================================================
+[2025-05-29 03:45:37] Generating detailed JSON report...
+
+2025-05-29T03:45:37Z	INFO	Vulnerability scanning is enabled
+2025-05-29T03:45:37Z	INFO	Secret scanning is enabled
+2025-05-29T03:45:37Z	INFO	If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-05-29T03:45:37Z	INFO	Please see also https://aquasecurity.github.io/trivy/v0.52/docs/scanner/secret/#recommendation for faster secret detection
+2025-05-29T03:45:37Z	FATAL	Fatal error	image scan error: scan error: unable to initialize a scanner: unable to initialize an image scanner: failed to parse the image name: could not parse reference: /work/docker/Dockerfile.vulnerable
+[2025-05-29 03:45:37] ✅ SUCCESS: Comprehensive scan completed
+
+============================================================
+[2025-05-29 03:45:37] DOCKER SCAN SUMMARY
+============================================================
+[2025-05-29 03:45:37] Scan completed for image: /work/docker/Dockerfile.vulnerable
+[2025-05-29 03:45:37] Full report saved to: /work/docker-scan-report-20250529-034529.log
+
+=================================================================
+                    SCAN COMPLETED
+              Thu May 29 03:45:37 UTC 2025
+=================================================================

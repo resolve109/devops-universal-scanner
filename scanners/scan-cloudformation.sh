@@ -160,6 +160,7 @@ if [ "$OVERALL_STATUS" = "SUCCESS" ]; then
     log_success "Overall scan result: ALL TOOLS PASSED - No critical issues found!"
 else
     log_warning "Overall scan result: ISSUES FOUND - Review the detailed output above"
+    log_message "Tools with issues: $TOTAL_ISSUES out of 2"
 fi
 
 log_message "📄 Complete scan log saved to: cloudformation-scan-report-${TIMESTAMP}.log"
@@ -167,16 +168,7 @@ log_message "🎯 All tool outputs captured with timestamps and exit codes"
 
 echo ""
 echo "✅ CloudFormation scan completed! Report saved to: cloudformation-scan-report-${TIMESTAMP}.log"
-else
-    log_warning "Overall scan result: ISSUES FOUND - Review the detailed output above"
-    log_message "Tools with issues: $TOTAL_ISSUES out of 2"
-fi
-
-log_message "📄 Complete scan log saved to: cloudformation-scan-report.log"
-log_message "🎯 All tool outputs captured with timestamps and exit codes"
-
-echo ""
 echo "🎉 CloudFormation Scan Complete!"
-echo "📄 Detailed log: cloudformation-scan-report.log"
+echo "📄 Detailed log: cloudformation-scan-report-${TIMESTAMP}.log"
 echo "🎯 Target: $TARGET"
 echo "📊 Overall Status: $OVERALL_STATUS"

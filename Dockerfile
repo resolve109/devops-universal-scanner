@@ -1,4 +1,4 @@
-FROM alpine:3.18
+FROM alpine:3.21
 
 # Install essential build and runtime dependencies
 RUN apk add --no-cache \
@@ -17,9 +17,9 @@ RUN apk add --no-cache \
     openssl \
     file
 
-# Install essential Python tools
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir \
+# Install essential Python tools (using --break-system-packages for Alpine 3.21+)
+RUN pip3 install --no-cache-dir --break-system-packages --upgrade pip && \
+    pip3 install --no-cache-dir --break-system-packages \
     cfn-lint \
     checkov
 
@@ -43,7 +43,7 @@ RUN apk add --no-cache \
     python3-dev \
     musl-dev \
     linux-headers \
-    && pip3 install --no-cache-dir azure-cli-core \
+    && pip3 install --no-cache-dir --break-system-packages azure-cli-core \
     && apk del gcc python3-dev musl-dev linux-headers
 
 # Install Bicep CLI
@@ -58,7 +58,7 @@ RUN mkdir -p /opt/arm-ttk && \
 
 # Install minimal Google Cloud libraries for GCP Deployment Manager
 # Use minimal packages for validation functionality
-RUN pip3 install --no-cache-dir \
+RUN pip3 install --no-cache-dir --break-system-packages \
     google-cloud-core \
     google-cloud-storage \
     google-api-python-client && \

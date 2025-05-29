@@ -1,0 +1,136 @@
+=================================================================
+              GCP DEPLOYMENT SECURITY SCAN REPORT
+=================================================================
+Target: gcp-deployment-manager/vulnerable-infrastructure.yaml
+Scan Started: Thu May 29 02:02:15 UTC 2025
+Scanner: Checkov + GCloud validation
+=================================================================
+
+
+============================================================
+[2025-05-29 02:02:15] GCP DEPLOYMENT SCAN STARTING
+============================================================
+[2025-05-29 02:02:16] Scanning GCP deployment template: gcp-deployment-manager/vulnerable-infrastructure.yaml
+[2025-05-29 02:02:16] ✅ SUCCESS: Target file found: gcp-deployment-manager/vulnerable-infrastructure.yaml
+
+============================================================
+[2025-05-29 02:02:16] FILE ANALYSIS
+============================================================
+[2025-05-29 02:02:16] Analyzing file type and content...
+
+File: gcp-deployment-manager/vulnerable-infrastructure.yaml
+Size: 3661 bytes
+Type: 
+
+--- File Preview (first 20 lines) ---
+# GCP Deployment Manager template with security vulnerabilities
+# This template creates a Compute Engine instance with intentional security issues
+
+imports:
+- path: vm-template.jinja
+
+resources:
+- name: vulnerable-vm-instance
+  type: vm-template.jinja
+  properties:
+    # Issue: Using default machine type (might be oversized)
+    machineType: n1-standard-1
+    zone: us-central1-a
+    
+    # Issue: Using default service account with broad permissions
+    serviceAccount: default
+    
+    # Issue: No disk encryption specified
+    diskEncryption: false
+    
+--- End Preview ---
+
+
+============================================================
+[2025-05-29 02:02:16] CHECKOV SECURITY SCAN
+============================================================
+[2025-05-29 02:02:16] Running Checkov security analysis on GCP template...
+
+[2025-05-29 02:02:16] ✅ SUCCESS: Checkov found, starting scan...
+
+usage: checkov [-h] [-v] [--support] [-d DIRECTORY] [--add-check]
+               [-f FILE [FILE ...]] [--skip-path SKIP_PATH]
+               [--external-checks-dir EXTERNAL_CHECKS_DIR]
+               [--external-checks-git EXTERNAL_CHECKS_GIT] [-l]
+               [-o {cli,csv,cyclonedx,cyclonedx_json,json,junitxml,github_failed_only,gitlab_sast,sarif,spdx}]
+               [--output-file-path OUTPUT_FILE_PATH] [--output-bc-ids]
+               [--include-all-checkov-policies] [--quiet] [--compact]
+               [--framework FRAMEWORK [FRAMEWORK ...]]
+               [--skip-framework SKIP_FRAMEWORK [SKIP_FRAMEWORK ...]]
+               [-c CHECK] [--skip-check SKIP_CHECK]
+               [--run-all-external-checks] [-s] [--soft-fail-on SOFT_FAIL_ON]
+               [--hard-fail-on HARD_FAIL_ON] [--bc-api-key BC_API_KEY]
+               [--prisma-api-url PRISMA_API_URL] [--skip-results-upload]
+               [--docker-image DOCKER_IMAGE]
+               [--dockerfile-path DOCKERFILE_PATH] [--repo-id REPO_ID]
+               [-b BRANCH] [--skip-download] [--use-enforcement-rules]
+               [--download-external-modules DOWNLOAD_EXTERNAL_MODULES]
+               [--var-file VAR_FILE]
+               [--external-modules-download-path EXTERNAL_MODULES_DOWNLOAD_PATH]
+               [--evaluate-variables EVALUATE_VARIABLES] [-ca CA_CERTIFICATE]
+               [--no-cert-verify]
+               [--repo-root-for-plan-enrichment REPO_ROOT_FOR_PLAN_ENRICHMENT]
+               [--config-file CONFIG_FILE] [--create-config CREATE_CONFIG]
+               [--show-config] [--create-baseline] [--baseline BASELINE]
+               [--output-baseline-as-skipped]
+               [--skip-cve-package SKIP_CVE_PACKAGE]
+               [--policy-metadata-filter POLICY_METADATA_FILTER]
+               [--policy-metadata-filter-exception POLICY_METADATA_FILTER_EXCEPTION]
+               [--secrets-scan-file-type SECRETS_SCAN_FILE_TYPE]
+               [--enable-secret-scan-all-files]
+               [--block-list-secret-scan BLOCK_LIST_SECRET_SCAN]
+               [--summary-position {top,bottom}]
+               [--skip-resources-without-violations] [--deep-analysis]
+               [--no-fail-on-crash] [--mask MASK] [--scan-secrets-history]
+               [--secrets-history-timeout SECRETS_HISTORY_TIMEOUT]
+               [--custom-tool-name CUSTOM_TOOL_NAME]
+checkov: error: Invalid frameworks specified: gcp.
+Valid values are: ansible, argo_workflows, arm, azure_pipelines, bicep, bitbucket_pipelines, cdk, circleci_pipelines, cloudformation, dockerfile, github_configuration, github_actions, gitlab_configuration, gitlab_ci, bitbucket_configuration, helm, json, yaml, kubernetes, kustomize, openapi, sca_package, sca_image, secrets, serverless, terraform, terraform_json, terraform_plan, sast, sast_python, sast_java, sast_javascript, sast_typescript, sast_golang, 3d_policy, all
+[2025-05-29 02:02:19] ✅ SUCCESS: Checkov scan completed
+
+============================================================
+[2025-05-29 02:02:19] GCLOUD DEPLOYMENT VALIDATION
+============================================================
+[2025-05-29 02:02:19] Attempting GCloud deployment validation...
+
+[2025-05-29 02:02:19] ⚠️  WARNING: Google Cloud Deployment Manager module not available for validation
+
+============================================================
+[2025-05-29 02:02:19] ADDITIONAL SECURITY ANALYSIS
+============================================================
+[2025-05-29 02:02:19] Performing additional security checks...
+
+[2025-05-29 02:02:19] Checking for common GCP security issues:
+
+--- Checking for public access configurations ---
+    - entity: allUsers
+[2025-05-29 02:02:19] ⚠️  WARNING: Found potential public access configurations
+
+--- Checking for default service accounts ---
+    # Issue: Using default service account with broad permissions
+[2025-05-29 02:02:19] ⚠️  WARNING: Found references to default service accounts
+
+--- Checking for firewall rules ---
+        - "0.0.0.0/0"
+        - "0.0.0.0/0"
+- name: vulnerable-firewall-rule
+  type: compute.v1.firewall
+    # Issue: Overly permissive firewall rule
+    - "0.0.0.0/0"
+[2025-05-29 02:02:19] ⚠️  WARNING: Found firewall rules - review for overly permissive access
+
+============================================================
+[2025-05-29 02:02:19] GCP SCAN SUMMARY
+============================================================
+[2025-05-29 02:02:19] Scan completed for: gcp-deployment-manager/vulnerable-infrastructure.yaml
+[2025-05-29 02:02:19] Full report saved to: /work/gcp-scan-report.log
+
+=================================================================
+                    SCAN COMPLETED
+              Thu May 29 02:02:19 UTC 2025
+=================================================================

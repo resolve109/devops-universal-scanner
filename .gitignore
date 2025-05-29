@@ -36,9 +36,9 @@ token.txt
 secret.txt
 api-keys.txt
 
-# Logs
-*.log
-logs/
+# # Logs
+# *.log
+# logs/
 
 # Runtime data
 pids
@@ -70,5 +70,5 @@ Thumbs.db
 .terraform/
 
 # #docker-push
-# push-to-dockerhub.bat
-# push-to-dockerhub.sh    
+push-to-dockerhub.bat
+push-to-dockerhub.sh    
