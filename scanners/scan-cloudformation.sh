@@ -80,14 +80,21 @@ log_message "Running CFN-Lint validation on template..."
 cfn-lint "$TARGET" 2>&1 | tee -a "$OUTPUT_PATH"
 CFNLINT_EXIT=$?
 
+# Count the actual errors and warnings in the output for better reporting
+CFNLINT_ERRORS=$(grep -c "^E[0-9]\{4\}" "$OUTPUT_PATH" || echo "0")
+CFNLINT_WARNINGS=$(grep -c "^W[0-9]\{4\}" "$OUTPUT_PATH" || echo "0")
+
+# CFN-Lint exit codes: 0=no issues, 2=warnings, 4=errors, 6=warnings+errors
 if [ $CFNLINT_EXIT -eq 0 ]; then
     log_success "CFN-Lint validation completed successfully - no issues found"
 elif [ $CFNLINT_EXIT -eq 2 ]; then
-    log_warning "CFN-Lint found warnings (exit code: $CFNLINT_EXIT)"
+    log_warning "CFN-Lint found $CFNLINT_WARNINGS warning(s) (exit code: $CFNLINT_EXIT)"
 elif [ $CFNLINT_EXIT -eq 4 ]; then
-    log_error "CFN-Lint found errors (exit code: $CFNLINT_EXIT)"
+    log_error "CFN-Lint found $CFNLINT_ERRORS error(s) (exit code: $CFNLINT_EXIT)"
+elif [ $CFNLINT_EXIT -eq 6 ]; then
+    log_error "CFN-Lint found $CFNLINT_ERRORS error(s) and $CFNLINT_WARNINGS warning(s) (exit code: $CFNLINT_EXIT)"
 else
-    log_error "CFN-Lint scan failed (exit code: $CFNLINT_EXIT)"
+    log_error "CFN-Lint scan failed unexpectedly (exit code: $CFNLINT_EXIT)"
 fi
 
 # Checkov Section
@@ -133,11 +140,13 @@ log_message "🕐 Scan completed: $(date)"
 TOTAL_ISSUES=0
 OVERALL_STATUS="SUCCESS"
 
-if [ $CFNLINT_EXIT -ne 0 ]; then
+# CFN-Lint contributes to issues if warnings or errors found
+if [ $CFNLINT_EXIT -eq 2 ] || [ $CFNLINT_EXIT -eq 4 ] || [ $CFNLINT_EXIT -eq 6 ]; then
     TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
     OVERALL_STATUS="ISSUES_FOUND"
 fi
 
+# Checkov contributes to issues if exit code is non-zero
 if [ $CHECKOV_EXIT -ne 0 ]; then
     TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
     OVERALL_STATUS="ISSUES_FOUND"
@@ -151,7 +160,20 @@ fi
 # Final status
 log_message "============================================================"
 log_message "TOOL EXECUTION RESULTS:"
-log_message "- CFN-Lint: $([ $CFNLINT_EXIT -eq 0 ] && echo "✅ PASSED" || echo "⚠️  ISSUES (exit $CFNLINT_EXIT)")"
+
+# CFN-Lint detailed status
+if [ $CFNLINT_EXIT -eq 0 ]; then
+    log_message "- CFN-Lint: ✅ PASSED (no issues found)"
+elif [ $CFNLINT_EXIT -eq 2 ]; then
+    log_message "- CFN-Lint: ⚠️  WARNINGS FOUND ($CFNLINT_WARNINGS warnings, exit $CFNLINT_EXIT)"
+elif [ $CFNLINT_EXIT -eq 4 ]; then
+    log_message "- CFN-Lint: ❌ ERRORS FOUND ($CFNLINT_ERRORS errors, exit $CFNLINT_EXIT)"
+elif [ $CFNLINT_EXIT -eq 6 ]; then
+    log_message "- CFN-Lint: ❌ WARNINGS + ERRORS FOUND ($CFNLINT_ERRORS errors, $CFNLINT_WARNINGS warnings, exit $CFNLINT_EXIT)"
+else
+    log_message "- CFN-Lint: ❌ FAILED (exit $CFNLINT_EXIT)"
+fi
+
 log_message "- Checkov: $([ $CHECKOV_EXIT -eq 0 ] && echo "✅ PASSED" || echo "⚠️  ISSUES (exit $CHECKOV_EXIT)")"
 log_message "- AWS Validation: $([ $AWS_EXIT -eq 0 ] && echo "✅ PASSED" || [ $AWS_EXIT -eq 127 ] && echo "⏭️  SKIPPED" || echo "⚠️  FAILED (exit $AWS_EXIT)")"
 log_message "============================================================"
@@ -161,6 +183,31 @@ if [ "$OVERALL_STATUS" = "SUCCESS" ]; then
 else
     log_warning "Overall scan result: ISSUES FOUND - Review the detailed output above"
     log_message "Tools with issues: $TOTAL_ISSUES out of 2"
+    
+    # List top issues for better visibility
+    if [ $CFNLINT_EXIT -ne 0 ]; then
+        log_message "CFN-Lint Issues Summary:"
+        if [ $CFNLINT_ERRORS -gt 0 ]; then
+            log_message "  - $CFNLINT_ERRORS error(s) found"
+            # Extract and show the first 3 errors
+            grep "^E[0-9]\{4\}" "$OUTPUT_PATH" | head -3 | while read -r line; do
+                log_message "    ❌ $line"
+            done
+            if [ $CFNLINT_ERRORS -gt 3 ]; then
+                log_message "    ... and more (see detailed log)"
+            fi
+        fi
+        if [ $CFNLINT_WARNINGS -gt 0 ]; then
+            log_message "  - $CFNLINT_WARNINGS warning(s) found"
+            # Extract and show the first 3 warnings
+            grep "^W[0-9]\{4\}" "$OUTPUT_PATH" | head -3 | while read -r line; do
+                log_message "    ⚠️ $line"
+            done
+            if [ $CFNLINT_WARNINGS -gt 3 ]; then
+                log_message "    ... and more (see detailed log)"
+            fi
+        fi
+    fi
 fi
 
 log_message "📄 Complete scan log saved to: cloudformation-scan-report-${TIMESTAMP}.log"
