@@ -8,7 +8,8 @@ set +e  # Handle errors gracefully
 cd /work
 
 TARGET="$1"
-OUTPUT_PATH="/work/gcp-scan-report.log"
+TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+OUTPUT_PATH="/work/gcp-scan-report-${TIMESTAMP}.log"
 
 # Helper functions for logging with timestamps
 log_message() {

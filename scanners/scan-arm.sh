@@ -8,7 +8,8 @@ set +e  # Handle errors gracefully
 cd /work
 
 TARGET="$1"
-OUTPUT_PATH="/work/azure-arm-scan-report.log"
+TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+OUTPUT_PATH="/work/azure-arm-scan-report-${TIMESTAMP}.log"
 
 # Helper functions for logging with timestamps
 log_message() {
@@ -178,4 +179,4 @@ echo "                    SCAN COMPLETED" >> "$OUTPUT_PATH"
 echo "              $(date)" >> "$OUTPUT_PATH"
 echo "=================================================================" >> "$OUTPUT_PATH"
 
-echo "✅ Azure ARM scan completed! Report saved to: azure-arm-scan-report.log"
+echo "✅ Azure ARM scan completed! Report saved to: azure-arm-scan-report-${TIMESTAMP}.log"

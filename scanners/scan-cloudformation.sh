@@ -8,7 +8,8 @@ set +e  # Handle errors gracefully
 cd /work
 
 TARGET="$1"
-OUTPUT_PATH="/work/cloudformation-scan-report.log"
+TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+OUTPUT_PATH="/work/cloudformation-scan-report-${TIMESTAMP}.log"
 
 # Helper functions for logging with timestamps
 log_message() {
@@ -157,6 +158,15 @@ log_message "============================================================"
 
 if [ "$OVERALL_STATUS" = "SUCCESS" ]; then
     log_success "Overall scan result: ALL TOOLS PASSED - No critical issues found!"
+else
+    log_warning "Overall scan result: ISSUES FOUND - Review the detailed output above"
+fi
+
+log_message "📄 Complete scan log saved to: cloudformation-scan-report-${TIMESTAMP}.log"
+log_message "🎯 All tool outputs captured with timestamps and exit codes"
+
+echo ""
+echo "✅ CloudFormation scan completed! Report saved to: cloudformation-scan-report-${TIMESTAMP}.log"
 else
     log_warning "Overall scan result: ISSUES FOUND - Review the detailed output above"
     log_message "Tools with issues: $TOTAL_ISSUES out of 2"

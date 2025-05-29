@@ -8,7 +8,8 @@ set +e  # Handle errors gracefully
 cd /work
 
 TARGET="$1"
-OUTPUT_PATH="/work/azure-bicep-scan-report.log"
+TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+OUTPUT_PATH="/work/azure-bicep-scan-report-${TIMESTAMP}.log"
 
 # Helper functions for logging with timestamps
 log_message() {
@@ -196,4 +197,4 @@ echo "                    SCAN COMPLETED" >> "$OUTPUT_PATH"
 echo "              $(date)" >> "$OUTPUT_PATH"
 echo "=================================================================" >> "$OUTPUT_PATH"
 
-echo "✅ Azure Bicep scan completed! Report saved to: azure-bicep-scan-report.log"
+echo "✅ Azure Bicep scan completed! Report saved to: azure-bicep-scan-report-${TIMESTAMP}.log"

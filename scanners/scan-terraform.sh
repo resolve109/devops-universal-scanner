@@ -9,7 +9,8 @@ set +e  # Handle errors gracefully
 cd /work
 
 TARGET="$1"
-OUTPUT_PATH="/work/terraform-scan-report.log"
+TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
+OUTPUT_PATH="/work/terraform-scan-report-${TIMESTAMP}.log"
 
 # Helper functions for logging with timestamps
 log_message() {
@@ -201,10 +202,11 @@ else
     log_message "Tools with issues: $TOTAL_ISSUES out of 3"
 fi
 
-log_message "📄 Complete scan log saved to: terraform-scan-report.log"
+log_message "📄 Complete scan log saved to: terraform-scan-report-${TIMESTAMP}.log"
 log_message "🎯 All tool outputs captured with timestamps and exit codes"
 
 echo ""
+echo "✅ Terraform scan completed! Report saved to: terraform-scan-report-${TIMESTAMP}.log"
 echo "🎉 Terraform Scan Complete!"
 echo "📄 Detailed log: terraform-scan-report.log"
 echo "🎯 Target: $TARGET ($SCAN_TYPE)"
