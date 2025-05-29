@@ -1,18 +1,21 @@
 # DevOps Universal Scanner
 
-**🚀 Zero Configuration DevOps Security Scanner with Auto-Mounting**
+**🚀 Comprehensive DevOps Security Scanner**
 
-A comprehensive Docker-based security scanner that **automatically handles all volume mounting** - no more complex Docker commands!
+A comprehensive Docker-based security scanner for your infrastructure code with intelligent error handling and helpful command suggestions.
+This scanner supports multiple formats including Terraform, CloudFormation, Docker images, Azure ARM/Bicep templates, and GCP Deployment Manager configurations. It uses industry-standard tools like TFLint, TFSec, Checkov, Trivy, and more to ensure your infrastructure is secure and compliant.
 
 ## What Makes This Different
 
-✅ **Auto-detects your working directory** - no manual volume mounts  
 ✅ **One simple command structure** for all scan types  
 ✅ **Comprehensive LOG format** with full terminal output capture  
-✅ **Cross-platform** Python orchestrator for Windows/macOS/Linux  
+✅ **Intelligent error handling** with helpful command suggestions  
+✅ **Cross-platform Docker commands** with clear examples  
 
-**Before:** `docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform/`  
-**Now:** `python devops-scanner.py scan-terraform terraform/`
+**Simple usage with Docker:**
+```bash
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
+```
 
 ## Scanner Commands Available
 
@@ -34,50 +37,43 @@ All commands generate detailed `.log` files with full terminal output:
 ```bash
 # Pull the Docker image
 docker pull spd109/devops-uat:latest
-
-# Clone this repo for the Python wrapper (recommended)
-git clone <this-repo>
-cd devops-universal-scanner
 ```
 
-### 2. Use the Auto-Mounting Commands
+### 2. Run Scans
 
-**🎯 Recommended: Python Wrapper (Cross-Platform)**
+**🎯 Basic Commands:**
 
 ```bash
-# Scan Terraform configurations  
-python devops-scanner.py scan-terraform terraform/
+# Windows (PowerShell)
+docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-terraform terraform/
 
-# Scan CloudFormation templates
-python devops-scanner.py scan-cloudformation template.yaml
+# Windows (Command Prompt)
+docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform/
 
-# Scan container images for vulnerabilities
-python devops-scanner.py scan-docker nginx:latest
-
-# Scan Azure ARM templates
-python devops-scanner.py scan-arm template.json
-
-# Scan Azure Bicep templates  
-python devops-scanner.py scan-bicep template.bicep
-
-# Scan GCP templates
-python devops-scanner.py scan-gcp template.yaml
+# Linux/macOS
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
 ```
 
-**🐚 Alternative: Shell Wrapper (Linux/macOS)**
+**Example Commands:**
 
 ```bash
-./devops-scanner scan-terraform terraform/
-./devops-scanner scan-cloudformation template.yaml
-./devops-scanner scan-docker nginx:latest
-```
+# Terraform configurations
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
 
-**💻 Alternative: Batch Wrapper (Windows)**
+# CloudFormation templates
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformation template.yaml
 
-```cmd
-devops-scanner.bat scan-terraform terraform\
-devops-scanner.bat scan-cloudformation template.yaml
-devops-scanner.bat scan-docker nginx:latest
+# Container images for vulnerabilities
+docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
+
+# Azure ARM templates
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-arm template.json
+
+# Azure Bicep templates  
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-bicep template.bicep
+
+# GCP templates
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-gcp template.yaml
 ```
 
 ## Output Files Generated
@@ -106,21 +102,22 @@ Scanner: Trivy (Vulnerabilities + Secrets + Misconfigurations)
 
 ## Advanced Usage
 
-### Direct Docker Commands (If Needed)
-
-If you prefer using Docker directly without the wrapper scripts:
-
-```bash
-# Note: You'll need to handle volume mounting manually
-docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
-docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-docker nginx:latest
-```
-
-**⚠️ Warning:** Manual volume mounting can be complex on Windows. The Python wrapper is recommended.
-
 ### Environment Variables
 
 Set these for cloud provider authentication:
+
+```bash
+# AWS (for CloudFormation validation)
+export AWS_ACCESS_KEY_ID=your_key
+export AWS_SECRET_ACCESS_KEY=your_secret
+
+# Azure (for ARM/Bicep validation)  
+export AZURE_CLIENT_ID=your_client_id
+export AZURE_CLIENT_SECRET=your_secret
+
+# GCP (for Deployment Manager validation)
+export GOOGLE_APPLICATION_CREDENTIALS=/path/to/service-account.json
+```
 
 ```bash
 # AWS (for CloudFormation validation)
@@ -152,11 +149,10 @@ jobs:
       - name: Setup Scanner
         run: |
           docker pull spd109/devops-uat:latest
-          
-      - name: Scan Infrastructure
+            - name: Scan Infrastructure
         run: |
-          python devops-scanner.py scan-terraform terraform/
-          python devops-scanner.py scan-cloudformation cloudformation/
+          docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
+          docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformation cloudformation/
           
       - name: Upload Reports
         uses: actions/upload-artifact@v3
@@ -179,15 +175,16 @@ infrastructure-security:
   image: python:3.9
   services:
     - docker:dind
+  tags:
+    - docker(most likely your runner name)  
   variables:
     DOCKER_DRIVER: overlay2
     DOCKER_TLS_CERTDIR: ""
   before_script:
-    - docker pull spd109/devops-uat:latest
-  script:
-    - python devops-scanner.py scan-terraform terraform/
-    - python devops-scanner.py scan-cloudformation cloudformation/
-    - python devops-scanner.py scan-docker $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker pull spd109/devops-uat:latest  script:
+    - docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
+    - docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformation cloudformation/
+    - docker run -it --rm spd109/devops-uat:latest scan-docker $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
   artifacts:
     reports:
       # GitLab will parse these as security reports
@@ -224,14 +221,13 @@ stages:
       inputs:
         command: 'pull'
         arguments: 'spd109/devops-uat:latest'
-    
-    - task: PythonScript@0
+      - task: PythonScript@0
       displayName: 'Scan Terraform'
       inputs:
         scriptSource: 'inline'
         script: |
           import subprocess
-          result = subprocess.run(['python', 'devops-scanner.py', 'scan-terraform', 'terraform/'], 
+          result = subprocess.run(['docker', 'run', '-it', '--rm', '-v', '$(pwd):/work', 'spd109/devops-uat:latest', 'scan-terraform', 'terraform/'], 
                                 capture_output=True, text=True)
           print(result.stdout)
           if result.stderr:
@@ -243,7 +239,7 @@ stages:
         scriptSource: 'inline'
         script: |
           import subprocess
-          result = subprocess.run(['python', 'devops-scanner.py', 'scan-cloudformation', 'cloudformation/'], 
+          result = subprocess.run(['docker', 'run', '-it', '--rm', '-v', '$(pwd):/work', 'spd109/devops-uat:latest', 'scan-cloudformation', 'cloudformation/'], 
                                 capture_output=True, text=True)
           print(result.stdout)
           if result.stderr:
@@ -277,11 +273,10 @@ stages:
 pipeline {
     agent any
     stages {
-        stage('Security Scan') {
-            steps {
+        stage('Security Scan') {            steps {
                 sh 'docker pull spd109/devops-uat:latest'
-                sh 'python devops-scanner.py scan-terraform terraform/'
-                sh 'python devops-scanner.py scan-cloudformation cloudformation/'
+                sh 'docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/'
+                sh 'docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformation cloudformation/'
                 
                 archiveArtifacts artifacts: '*-scan-report.log, *-summary.txt'
                 publishHTML([
@@ -300,34 +295,76 @@ pipeline {
 
 ## Test Files Included
 
-The repository includes test files for all scanner types:
+The repository includes comprehensive test files with **intentional security vulnerabilities** for validating the scanner's capabilities.
+
+⚠️ **WARNING**: These files contain intentional security misconfigurations and should NEVER be used in production! Do not deploy them in any live environment. They are strictly for testing and educational purposes. Like really, don't use these in production! I'm serious, these files are designed to break things and expose vulnerabilities. Use them wisely in isolated environments only. Don't say I didn't warn you! If you deploy these in production, you're asking for trouble. Seriously, don't do it! Consider this your final warning: these files are for testing only. They will cause security issues if used in production. Use at your own risk! Cause if you deploy these in production, you're basically inviting hackers to your system. So please, for the love of security, don't use these files in any live environment! And remember, these files are meant to help you learn about security vulnerabilities, not to create them in your production systems. Use them wisely and responsibly! Just don't deploy these in production, okay? They're meant to help you learn about security vulnerabilities, not to create them in your production systems. Use them wisely and responsibly! Exactly, these files are meant to help you learn about security vulnerabilities, not to create them in your production systems. Use them wisely and responsibly! 
+
+### Directory Structure
 
 ```
 test-files/
-├── terraform/          # Sample Terraform configurations
-├── cloudformation/     # Sample CloudFormation templates  
-├── azure-arm/          # Sample ARM templates
-├── azure-bicep/        # Sample Bicep templates
-└── gcp-deployment-manager/  # Sample GCP templates
+├── terraform/              # Terraform configurations with vulnerabilities
+├── cloudformation/         # AWS CloudFormation templates with issues
+├── azure-arm/              # Azure ARM templates with misconfigurations
+├── azure-bicep/            # Azure Bicep templates with security issues
+└── gcp-deployment-manager/ # GCP templates with vulnerabilities
 ```
 
-Run tests with:
+### Test File Details
+
+**Terraform (`terraform/`):**
+- `main.tf` - Multi-cloud infrastructure with hardcoded credentials, unencrypted resources
+- `variables.tf` - Sensitive data in defaults, no input validation
+- `outputs.tf` - Outputting credentials and sensitive information
+- `providers.tf` - Hardcoded credentials, weak security settings
+
+**CloudFormation (`cloudformation/`):**
+- `ec2-instance.yaml` - Unencrypted storage, overly permissive security groups
+- `rds-database.json` - Public access, weak passwords, no encryption
+- `s3-iam-vulnerable.json` - Public bucket access, overly permissive IAM
+- `networking-vulnerable.yaml` - Wide-open security groups and network ACLs
+
+**Azure ARM (`azure-arm/`):**
+- `vm-with-storage.json` - Unencrypted storage, weak authentication
+- `keyvault-sql-vulnerable.json` - Weak access policies, public network access
+
+**Azure Bicep (`azure-bicep/`):**
+- `storage-account.bicep` - Public access, no encryption, weak TLS
+- `web-app.bicep` - HTTPS not enforced, hardcoded secrets
+
+**GCP Deployment Manager (`gcp-deployment-manager/`):**
+- `vulnerable-infrastructure.yaml` - Overly permissive firewall rules, public storage
+- `vm-template.jinja` - Default service accounts, no shielded VM
+
+### Security Issues Tested
+
+✅ **Authentication & Authorization** - Hardcoded credentials, weak passwords, overly permissive IAM  
+✅ **Network Security** - 0.0.0.0/0 access, public subnets, missing VPC flow logs  
+✅ **Data Protection** - Unencrypted storage, public read/write access, no backup encryption  
+✅ **Monitoring & Logging** - Disabled audit logging, no security monitoring  
+✅ **Configuration Security** - Debug modes enabled, default configurations, insecure protocols  
+✅ **Information Disclosure** - Outputting sensitive data, storing secrets in plain text  
+
+### Run Tests
 
 ```bash
-python devops-scanner.py scan-terraform test-files/terraform/
-python devops-scanner.py scan-cloudformation test-files/cloudformation/
-python devops-scanner.py scan-arm test-files/azure-arm/
+# Test all scanners with included sample files
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform test-files/terraform/
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
 ```
 
+### Expected Findings
+
+Each test file should trigger multiple security findings:
+- **High Severity**: Hardcoded credentials, public access, disabled encryption
+- **Medium Severity**: Weak configurations, missing monitoring, overly permissive access  
+- **Low Severity**: Missing tags, suboptimal configurations, informational issues
+
 ## Architecture
-
-### Python Orchestrator Modules
-
-- `devops-scanner.py` - Main orchestrator script
-- `helpers/docker_manager.py` - Docker command construction and execution
-- `helpers/path_detector.py` - Cross-platform path detection and formatting
-- `helpers/scanner_orchestrator.py` - Scanner coordination and execution
-- `helpers/result_processor.py` - Log analysis and summary generation
 
 ### Scanner Scripts (Inside Docker)
 
@@ -351,24 +388,15 @@ docker info
 
 **"Permission denied"**
 ```bash
-# On Linux/macOS, make scripts executable
-chmod +x devops-scanner
-chmod +x devops-scanner.py
+# On Linux/macOS, ensure Docker is running
+sudo systemctl start docker
 ```
 
 **"Volume mount failed"**
 ```bash
-# Use the Python wrapper - it handles path formatting automatically
-python devops-scanner.py scan-terraform terraform/
-```
-
-### Debug Mode
-
-Enable verbose output:
-
-```bash
-# Add debug flag to see Docker commands being executed
-python devops-scanner.py --debug scan-terraform terraform/
+# Ensure you're in the correct directory with your files
+ls terraform/  # Should show your .tf files
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
 ```
 
 ## Contributing
@@ -384,4 +412,4 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**🚀 Ready to scan? Start with:** `python devops-scanner.py scan-docker nginx:latest`
+**🚀 Ready to scan? Start with:** `docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest`

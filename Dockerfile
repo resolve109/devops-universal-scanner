@@ -75,6 +75,9 @@ COPY scanners/scan-bicep.sh /usr/local/bin/tools/
 COPY scanners/scan-gcp.sh /usr/local/bin/tools/
 COPY uat-setup.sh /usr/local/bin/tools/
 
+# Copy the Docker entrypoint script
+COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+
 # Copy helper modules
 COPY helpers/ /usr/local/bin/helpers/
 
@@ -500,8 +503,11 @@ WORKDIR /work
 # Make sure the work directory is writable
 RUN chmod -R 777 /work
 
-# Set default entrypoint to use bash shell
-ENTRYPOINT ["/bin/bash"]
+# Make the entrypoint executable
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
-# Set CMD to run the helper script if no arguments provided
-CMD ["/usr/local/bin/docker-tools-help"]
+# Set default entrypoint to our custom script
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Set CMD to show help if no arguments provided
+CMD []
