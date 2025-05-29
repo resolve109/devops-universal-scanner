@@ -1,0 +1,80 @@
+=================================================================
+              DOCKER IMAGE SECURITY SCAN REPORT
+=================================================================
+Target: test-files/docker/Dockerfile.vulnerable
+Scan Started: Thu May 29 11:54:19 UTC 2025
+Scanner: Trivy (Multi-purpose vulnerability scanner)
+=================================================================
+
+
+============================================================
+[2025-05-29 11:54:19] DOCKER IMAGE SCAN STARTING
+============================================================
+[2025-05-29 11:54:19] Scanning Docker image: test-files/docker/Dockerfile.vulnerable
+
+============================================================
+[2025-05-29 11:54:19] DOCKER ENVIRONMENT CHECK
+============================================================
+[2025-05-29 11:54:19] ⚠️  WARNING: Docker CLI not available - Trivy will pull from registry
+
+============================================================
+[2025-05-29 11:54:19] TRIVY VULNERABILITY SCAN (HIGH & CRITICAL)
+============================================================
+[2025-05-29 11:54:19] Scanning for HIGH and CRITICAL vulnerabilities...
+
+2025-05-29T11:54:20Z	INFO	[vulndb] Need to update DB
+2025-05-29T11:54:20Z	INFO	[vulndb] Downloading vulnerability DB...
+2025-05-29T11:54:20Z	INFO	[vulndb] Downloading artifact...	repo="mirror.gcr.io/aquasec/trivy-db:2"
+2.89 MiB / 64.35 MiB [-->____________________________________________________________] 4.49% ? p/s ?6.06 MiB / 64.35 MiB [----->_________________________________________________________] 9.42% ? p/s ?9.67 MiB / 64.35 MiB [--------->____________________________________________________] 15.03% ? p/s ?12.91 MiB / 64.35 MiB [--------->______________________________________] 20.06% 16.69 MiB p/s ETA 3s16.80 MiB / 64.35 MiB [------------>___________________________________] 26.10% 16.69 MiB p/s ETA 2s19.45 MiB / 64.35 MiB [-------------->_________________________________] 30.23% 16.69 MiB p/s ETA 2s23.31 MiB / 64.35 MiB [----------------->______________________________] 36.23% 16.73 MiB p/s ETA 2s27.42 MiB / 64.35 MiB [-------------------->___________________________] 42.61% 16.73 MiB p/s ETA 2s30.80 MiB / 64.35 MiB [---------------------->_________________________] 47.86% 16.73 MiB p/s ETA 2s35.37 MiB / 64.35 MiB [-------------------------->_____________________] 54.97% 16.95 MiB p/s ETA 1s40.04 MiB / 64.35 MiB [----------------------------->__________________] 62.22% 16.95 MiB p/s ETA 1s44.73 MiB / 64.35 MiB [--------------------------------->______________] 69.50% 16.95 MiB p/s ETA 1s49.51 MiB / 64.35 MiB [------------------------------------>___________] 76.93% 17.37 MiB p/s ETA 0s53.96 MiB / 64.35 MiB [---------------------------------------->_______] 83.85% 17.37 MiB p/s ETA 0s57.27 MiB / 64.35 MiB [------------------------------------------>_____] 89.00% 17.37 MiB p/s ETA 0s60.30 MiB / 64.35 MiB [-------------------------------------------->___] 93.71% 17.41 MiB p/s ETA 0s63.26 MiB / 64.35 MiB [----------------------------------------------->] 98.30% 17.41 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 17.41 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 16.72 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 16.72 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 16.72 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 15.65 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 15.65 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 15.65 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 14.64 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 14.64 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 14.64 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [---------------------------------------------->] 100.00% 13.69 MiB p/s ETA 0s64.35 MiB / 64.35 MiB [-------------------------------------------------] 100.00% 11.60 MiB p/s 5.7s2025-05-29T11:54:27Z	INFO	[vulndb] Artifact successfully downloaded	repo="mirror.gcr.io/aquasec/trivy-db:2"
+2025-05-29T11:54:27Z	INFO	[vuln] Vulnerability scanning is enabled
+2025-05-29T11:54:27Z	INFO	[secret] Secret scanning is enabled
+2025-05-29T11:54:27Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-05-29T11:54:27Z	INFO	[secret] Please see also https://trivy.dev/v0.62/docs/scanner/secret#recommendation for faster secret detection
+2025-05-29T11:54:27Z	FATAL	Fatal error	run error: image scan error: scan error: unable to initialize a scan service: unable to initialize an image scan service: failed to parse the image name: could not parse reference: test-files/docker/Dockerfile.vulnerable
+[2025-05-29 11:54:27] ✅ SUCCESS: Vulnerability scan completed
+
+============================================================
+[2025-05-29 11:54:27] TRIVY SECRET DETECTION
+============================================================
+[2025-05-29 11:54:27] Scanning for exposed secrets and sensitive data...
+
+2025-05-29T11:54:27Z	INFO	[secret] Secret scanning is enabled
+2025-05-29T11:54:27Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-05-29T11:54:27Z	INFO	[secret] Please see also https://trivy.dev/v0.62/docs/scanner/secret#recommendation for faster secret detection
+2025-05-29T11:54:27Z	FATAL	Fatal error	run error: image scan error: scan error: unable to initialize a scan service: unable to initialize an image scan service: failed to parse the image name: could not parse reference: test-files/docker/Dockerfile.vulnerable
+[2025-05-29 11:54:27] ✅ SUCCESS: Secret detection scan completed
+
+============================================================
+[2025-05-29 11:54:27] TRIVY CONFIGURATION SCAN
+============================================================
+[2025-05-29 11:54:27] Scanning for misconfigurations...
+
+2025-05-29T11:54:27Z	WARN	'--scanners config' is deprecated. Use '--scanners misconfig' instead. See https://github.com/aquasecurity/trivy/discussions/5586 for the detail.
+2025-05-29T11:54:27Z	INFO	[misconfig] Misconfiguration scanning is enabled
+2025-05-29T11:54:27Z	INFO	[misconfig] Need to update the checks bundle
+2025-05-29T11:54:27Z	INFO	[misconfig] Downloading the checks bundle...
+165.20 KiB / 165.20 KiB [------------------------------------------------------] 100.00% ? p/s 100ms2025-05-29T11:54:29Z	FATAL	Fatal error	run error: image scan error: scan error: unable to initialize a scan service: unable to initialize an image scan service: failed to parse the image name: could not parse reference: test-files/docker/Dockerfile.vulnerable
+[2025-05-29 11:54:29] ✅ SUCCESS: Configuration scan completed
+
+============================================================
+[2025-05-29 11:54:29] COMPREHENSIVE TRIVY SCAN (JSON OUTPUT)
+============================================================
+[2025-05-29 11:54:29] Generating detailed JSON report...
+
+2025-05-29T11:54:29Z	INFO	[vuln] Vulnerability scanning is enabled
+2025-05-29T11:54:29Z	INFO	[secret] Secret scanning is enabled
+2025-05-29T11:54:29Z	INFO	[secret] If your scanning is slow, please try '--scanners vuln' to disable secret scanning
+2025-05-29T11:54:29Z	INFO	[secret] Please see also https://trivy.dev/v0.62/docs/scanner/secret#recommendation for faster secret detection
+2025-05-29T11:54:29Z	FATAL	Fatal error	run error: image scan error: scan error: unable to initialize a scan service: unable to initialize an image scan service: failed to parse the image name: could not parse reference: test-files/docker/Dockerfile.vulnerable
+[2025-05-29 11:54:29] ✅ SUCCESS: Comprehensive scan completed
+
+============================================================
+[2025-05-29 11:54:29] DOCKER SCAN SUMMARY
+============================================================
+[2025-05-29 11:54:29] Scan completed for image: test-files/docker/Dockerfile.vulnerable
+[2025-05-29 11:54:29] Full report saved to: /work/docker-scan-report-20250529-115419.log
+
+=================================================================
+                    SCAN COMPLETED
+              Thu May 29 11:54:29 UTC 2025
+=================================================================

@@ -1,92 +1,115 @@
+# Multi-stage build for smaller final image
+FROM alpine:3.21.3 AS builder
+
+# Install build dependencies in builder stage
+RUN apk add --no-cache \
+    python3-dev \
+    py3-pip \
+    gcc \
+    musl-dev \
+    linux-headers \
+    git \
+    curl \
+    wget \
+    unzip
+
+# Create virtual environment to isolate dependencies
+RUN python3 -m venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Install only essential Python packages with optimizations
+RUN pip install --no-cache-dir --upgrade pip setuptools>=75.0.0 && \
+    pip install --no-cache-dir \
+    cfn-lint==0.87.* \
+    checkov==3.2.* \
+    sympy \
+    argcomplete \
+    google-cloud-core==2.4.* \
+    google-cloud-storage==2.10.* \
+    google-api-python-client==2.108.* \
+    azure-cli-core==2.55.* \
+    asteval==0.9.31
+
+# Download and extract binaries
+WORKDIR /tmp
+
+# Get Terraform
+RUN TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
+    wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+    chmod +x terraform
+
+# Get TFLint
+RUN TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
+    wget -q https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && \
+    unzip tflint_linux_amd64.zip && \
+    chmod +x tflint
+
+# Get TFSec  
+RUN TFSEC_VERSION=$(curl -s "https://api.github.com/repos/aquasecurity/tfsec/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
+    wget -q "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-amd64" && \
+    mv tfsec-linux-amd64 tfsec && \
+    chmod +x tfsec
+
+# Get Bicep CLI
+RUN wget -q https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && \
+    mv bicep-linux-x64 bicep && \
+    chmod +x bicep
+
+# Get Trivy
+RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
+    wget -q https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
+    tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
+    chmod +x trivy
+
+# Final lightweight stage
 FROM alpine:3.21.3
 
-# Install essential build and runtime dependencies
+# Install only runtime dependencies (much smaller)
 RUN apk add --no-cache \
     python3 \
-    py3-pip \
-    curl \
     bash \
+    curl \
     git \
-    unzip \
-    wget \
-    ca-certificates \
-    gnupg \
+    jq \
     nodejs \
     npm \
-    jq \
-    openssl \
-    file
+    ca-certificates \
+    openssl
+
+# Copy Python virtual environment from builder
+COPY --from=builder /opt/venv /opt/venv
+ENV PATH="/opt/venv/bin:$PATH"
+
+# Copy compiled binaries from builder
+COPY --from=builder /tmp/terraform /usr/local/bin/terraform
+COPY --from=builder /tmp/tflint /usr/local/bin/tflint
+COPY --from=builder /tmp/tfsec /usr/local/bin/tfsec
+COPY --from=builder /tmp/bicep /usr/local/bin/bicep
+COPY --from=builder /tmp/trivy /usr/local/bin/trivy
 
 # Create directories for caching and update tracking
 RUN mkdir -p /var/cache/devops-scanner /var/log/devops-scanner
 
-# Copy the daily update manager script first
+# Copy scripts and helpers
 COPY daily-update-manager.sh /usr/local/bin/daily-update-manager.sh
 RUN chmod +x /usr/local/bin/daily-update-manager.sh
 
-# Update setuptools first to fix CVE-2025-47273 (requires setuptools >= 70.4.0)
-# Install essential Python tools with security-focused versions
-RUN pip3 install --no-cache-dir --break-system-packages --upgrade pip setuptools>=75.0.0 && \
-    pip3 install --no-cache-dir --break-system-packages --upgrade \
-    cfn-lint \
-    checkov \
-    asteval \
-    google-cloud-core \
-    google-cloud-storage \
-    google-api-python-client
-
-# Install/update npm packages globally - always use latest versions for security
-RUN npm install -g \
+# Install minimal npm packages globally
+RUN npm install -g --production \
     ip@latest \
     cross-spawn@latest \
     semver@latest \
     tar@latest
 
-# Install Terraform (use latest to get newer Go stdlib)
-RUN TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
-    wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
-    unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin && \
-    rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
-
-# Install tflint (latest version to get newer Go stdlib)
-RUN curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
-
-# Install tfsec (latest version, though deprecated in favor of Trivy)
-RUN TFSEC_VERSION=$(curl -s "https://api.github.com/repos/aquasecurity/tfsec/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    wget -q "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-amd64" -O /usr/local/bin/tfsec && \
-    chmod +x /usr/local/bin/tfsec
-
-# Install minimal Azure CLI and build tools
-RUN apk add --no-cache \
-    gcc \
-    python3-dev \
-    musl-dev \
-    linux-headers \
-    && pip3 install --no-cache-dir --break-system-packages azure-cli-core \
-    && apk del gcc python3-dev musl-dev linux-headers
-
-# Install Bicep CLI (always latest release)
-RUN curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && \
-    chmod +x ./bicep && \
-    mv ./bicep /usr/local/bin/bicep
-
-# Install ARM-TTK (ARM Template Toolkit) - latest from main branch
+# Create minimal ARM-TTK (just the essential scripts)
 RUN mkdir -p /opt/arm-ttk && \
-    git clone --depth 1 https://github.com/Azure/arm-ttk.git /opt/arm-ttk && \
-    ln -s /opt/arm-ttk/arm-ttk.sh /usr/local/bin/arm-ttk
+    git clone --depth 1 --single-branch https://github.com/Azure/arm-ttk.git /opt/arm-ttk && \
+    # Remove unnecessary files to save space
+    rm -rf /opt/arm-ttk/.git /opt/arm-ttk/docs /opt/arm-ttk/unit-tests && \
+    ln -s /opt/arm-ttk/arm-ttk/arm-ttk.sh /usr/local/bin/arm-ttk
 
-# Install minimal Google Cloud libraries for GCP Deployment Manager - latest versions
-RUN pip3 install --no-cache-dir --break-system-packages --upgrade \
-    google-cloud-core \
-    google-cloud-storage \
-    google-api-python-client && \
-    mkdir -p /usr/local/bin/gcloud && \
-    ln -s /usr/bin/python3 /usr/local/bin/python
-
-# Install Trivy (latest version with newer Go stdlib to fix CVEs)
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin latest
-
-# Create a directory for scripts and tools
+# Create directory for scripts and tools
 RUN mkdir -p /usr/local/bin/tools
 
 # Copy scripts to the tools directory
@@ -203,7 +226,6 @@ RUN echo '#!/bin/bash\ncheckov "$@"' > /usr/local/bin/tools/checkov-wrapper.sh &
     echo '#!/bin/bash\naz "$@"' > /usr/local/bin/tools/az-wrapper.sh && \
     echo '#!/bin/bash\nbicep "$@"' > /usr/local/bin/tools/bicep-wrapper.sh && \
     echo '#!/bin/bash\narm-ttk "$@"' > /usr/local/bin/tools/arm-ttk-wrapper.sh && \
-    echo '#!/bin/bash\ngcloud "$@"' > /usr/local/bin/tools/gcloud-wrapper.sh && \
     echo '#!/bin/bash\ntrivy "$@"' > /usr/local/bin/tools/trivy-wrapper.sh && \
     chmod +x /usr/local/bin/tools/checkov-wrapper.sh && \
     chmod +x /usr/local/bin/tools/cfn-lint-wrapper.sh && \
@@ -213,7 +235,6 @@ RUN echo '#!/bin/bash\ncheckov "$@"' > /usr/local/bin/tools/checkov-wrapper.sh &
     chmod +x /usr/local/bin/tools/az-wrapper.sh && \
     chmod +x /usr/local/bin/tools/bicep-wrapper.sh && \
     chmod +x /usr/local/bin/tools/arm-ttk-wrapper.sh && \
-    chmod +x /usr/local/bin/tools/gcloud-wrapper.sh && \
     chmod +x /usr/local/bin/tools/trivy-wrapper.sh && \
     ln -s /usr/local/bin/tools/checkov-wrapper.sh /usr/local/bin/checkov-tool && \
     ln -s /usr/local/bin/tools/cfn-lint-wrapper.sh /usr/local/bin/cfn-lint-tool && \
@@ -223,7 +244,6 @@ RUN echo '#!/bin/bash\ncheckov "$@"' > /usr/local/bin/tools/checkov-wrapper.sh &
     ln -s /usr/local/bin/tools/az-wrapper.sh /usr/local/bin/az-tool && \
     ln -s /usr/local/bin/tools/bicep-wrapper.sh /usr/local/bin/bicep-tool && \
     ln -s /usr/local/bin/tools/arm-ttk-wrapper.sh /usr/local/bin/arm-ttk-tool && \
-    ln -s /usr/local/bin/tools/gcloud-wrapper.sh /usr/local/bin/gcloud-tool && \
     ln -s /usr/local/bin/tools/trivy-wrapper.sh /usr/local/bin/trivy-tool
 
 # Set up a working directory
@@ -237,7 +257,7 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 # Mark initial installation as complete to prevent unnecessary first-run updates
 RUN echo "$(date +%Y-%m-%d)" > /var/cache/devops-scanner/last_update_timestamp && \
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: Initial installation completed with latest security patches" >> /var/log/devops-scanner/updates.log
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: Optimized installation completed with latest security patches" >> /var/log/devops-scanner/updates.log
 
 # Set default entrypoint to our custom script
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

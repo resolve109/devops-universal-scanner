@@ -22,32 +22,46 @@ docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform te
 
 The DevOps Universal Scanner is built on Alpine Linux to provide a lightweight, fast, and efficient container:
 
-- **Base Image**: Alpine Linux 3.18 (lightweight and secure)
-- **Image Size**: ~1.63GB (optimized Alpine-based version)
+- **Base Image**: Alpine Linux 3.21.3 (lightweight and secure)
+- **Image Size**: ~1.02GB (multi-stage optimized version)
 - **Docker Hub**: [spd109/devops-uat:latest](https://hub.docker.com/r/spd109/devops-uat)
-- **Versioned Tags**: YYYYMMDD format (e.g., `spd109/devops-uat:20250528`)
+- **Versioned Tags**: YYYYMMDD format (e.g., `spd109/devops-uat:20250529`)
 - **Architecture**: Multi-platform support (linux/amd64, linux/arm64)
-- **Updated**: May 28, 2025 - Latest Alpine-based optimized build
+- **Updated**: May 29, 2025 - Latest multi-stage optimized build
 
 ### Performance Improvements
 
-The new Alpine-based image provides improvements over the previous Ubuntu-based version:
+The new multi-stage optimized image provides significant improvements over previous versions:
 
-| Metric | Ubuntu Version (Previous) | Alpine Version (Current) | Improvement |
-|--------|---------------------------|--------------------------|-------------|
-| **Image Size** | ~2.1GB | ~1.63GB | **22% smaller** |
-| **Pull Time** | ~3-4 minutes | ~2-3 minutes | **25% faster** |
-| **Start Time** | ~15-20 seconds | ~8-12 seconds | **40% faster** |
-| **Memory Usage** | ~800MB baseline | ~400MB baseline | **50% less** |
-| **Security** | More attack surface | Minimal base system | **Enhanced** |
+| Metric | Original Version | Optimized Version (Current) | Improvement |
+|--------|------------------|----------------------------|-------------|
+| **Image Size** | ~1.58GB | ~1.02GB | **35.4% smaller** |
+| **Pull Time** | ~3-4 minutes | ~2-3 minutes | **33% faster** |
+| **Build Time** | ~2.5 minutes | ~1.1 minutes | **56% faster** |
+| **Python Layer** | 542MB | 196MB | **63.8% smaller** |
+| **Base Layer** | 180MB | 134MB | **25.6% smaller** |
+| **ARM-TTK** | 16MB | 8.6MB | **46% smaller** |
 
-**Why Alpine Linux?**
-- **Lightweight**: Designed for containers and security
-- **Fast**: Minimal overhead and quick startup times
-- **Secure**: Smaller attack surface with fewer installed packages
-- **Efficient**: Uses musl libc and BusyBox for minimal footprint
+### Multi-Stage Build Optimizations
 
-*Note: Image size is large due to comprehensive security tool collection (Terraform, Trivy, Checkov, etc.)*
+The optimized image uses a multi-stage build approach:
+
+🔧 **Builder Stage**: Compiles tools and installs Python packages with build dependencies  
+🚀 **Runtime Stage**: Only includes runtime dependencies and compiled binaries  
+📦 **Virtual Environment**: Isolated Python packages for better dependency management  
+🧹 **Cleanup**: Removes .git directories and unnecessary files  
+
+**Key Size Reductions:**
+- **Python packages**: 542MB → 196MB (saved 346MB)
+- **Build dependencies**: Completely removed from final image  
+- **Repository cleanup**: Removed .git directories and docs  
+- **Runtime-only base**: Only essential packages for execution  
+
+**Why Multi-Stage Builds?**
+- **Separation of Concerns**: Build tools don't pollute runtime environment
+- **Smaller Images**: Only necessary components in final image
+- **Security**: Fewer tools available for potential exploitation
+- **Efficiency**: Faster pulls and deployments
 
 ### Included Scanning Tools
 
