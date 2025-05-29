@@ -110,6 +110,16 @@ docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terr
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
 ```
 
+**Windows Users:** If you experience volume mounting issues, use the provided helper scripts:
+
+```cmd
+# Using Command Prompt
+run-scan-windows.bat scan-cloudformation test-files/cloudformation/s3-iam-vulnerable.json
+
+# Using PowerShell
+.\helpers\run-scan-windows.ps1 scan-terraform terraform/
+```
+
 **Example Commands:**
 
 ```bash
