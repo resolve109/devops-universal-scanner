@@ -69,6 +69,6 @@ Thumbs.db
 # Terraform workspace files
 .terraform/
 
-#docker-push
-push-to-dockerhub.bat
-push-to-dockerhub.sh    
+# #docker-push
+# push-to-dockerhub.bat
+# push-to-dockerhub.sh    

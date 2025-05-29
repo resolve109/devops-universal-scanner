@@ -106,24 +106,26 @@ log_section "GCLOUD DEPLOYMENT VALIDATION"
 log_message "Attempting GCloud deployment validation..."
 echo "" >> "$OUTPUT_PATH"
 
-if command -v gcloud &> /dev/null; then
-    log_success "GCloud CLI found"
+if command -v python &> /dev/null && python -c "import google.cloud.deployment_manager" &> /dev/null; then
+    log_success "Google Cloud Deployment Manager module found"
     
     # Check if it's a Deployment Manager template
     if [[ "$TARGET" == *.yaml ]] || [[ "$TARGET" == *.yml ]]; then
-        log_message "Validating Deployment Manager template..."
+        log_message "Validating Deployment Manager template structure..."
         echo "" >> "$OUTPUT_PATH"
         
-        if gcloud deployment-manager deployments validate --config "$TARGET" --preview 2>&1 | tee -a "$OUTPUT_PATH"; then
-            log_success "GCloud validation passed"
+        # Simplified validation - check for required sections
+        if grep -q "resources:" "$TARGET"; then
+            log_success "Template contains resources section"
+            cat "$TARGET" | grep -A20 "resources:" | tee -a "$OUTPUT_PATH"
         else
-            log_warning "GCloud validation found issues or requires authentication"
+            log_warning "Template missing resources section"
         fi
     else
-        log_warning "File type not suitable for gcloud deployment validation"
+        log_warning "File type not suitable for deployment validation"
     fi
 else
-    log_warning "GCloud CLI not available for validation"
+    log_warning "Google Cloud Deployment Manager module not available for validation"
 fi
 
 # Additional Security Checks

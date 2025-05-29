@@ -1,0 +1,58 @@
+# WARNING: This docker-compose file contains intentional security vulnerabilities
+# DO NOT USE IN PRODUCTION!
+
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "80:80"
+      - "443:443"
+      - "22:22"  # SSH exposed
+    environment:
+      - DB_PASSWORD=admin123
+      - API_KEY=sk-1234567890abcdef
+      - DEBUG=true
+    volumes:
+      - /:/host_root  # Mounting entire host filesystem
+      - /var/run/docker.sock:/var/run/docker.sock  # Docker socket exposed
+    privileged: true  # Running with elevated privileges
+    network_mode: "host"  # Using host networking
+    
+  database:
+    image: mysql:5.7
+    ports:
+      - "3306:3306"  # Database exposed to public
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=app
+      - MYSQL_USER=admin
+      - MYSQL_PASSWORD=admin123
+    volumes:
+      - ./mysql-data:/var/lib/mysql
+    command: --general-log=1 --general-log-file=/var/lib/mysql/general.log
+    
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"  # Redis exposed without authentication
+    command: redis-server --protected-mode no
+    
+  ftp:
+    image: stilliard/pure-ftpd
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+    environment:
+      - PUBLICHOST=0.0.0.0
+      - FTP_USER_NAME=admin
+      - FTP_USER_PASS=admin123
+    volumes:
+      - ./ftp-data:/home/ftpusers/admin
+      
+networks:
+  default:
+    driver: bridge
+    driver_opts:
+      com.docker.network.enable_ipv6: "false"

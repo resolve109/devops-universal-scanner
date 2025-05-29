@@ -142,8 +142,19 @@ main() {
                 exec "/usr/local/bin/tools/${COMMAND}-wrapper.sh" "$@"
             elif [ -x "/usr/local/bin/$COMMAND" ]; then
                 exec "/usr/local/bin/$COMMAND" "$@"
+            elif [ "$COMMAND" = "terraform" ] || [ "$COMMAND" = "tflint" ] || [ "$COMMAND" = "tfsec" ] || [ "$COMMAND" = "checkov" ] || [ "$COMMAND" = "trivy" ] || [ "$COMMAND" = "bicep" ] || [ "$COMMAND" = "cfn-lint" ]; then
+                # Direct tool execution for common tools
+                echo "🔄 Running $COMMAND directly..."
+                exec "/usr/local/bin/$COMMAND" "$@"
             else
                 echo "❌ ERROR: Unknown command '$COMMAND'"
+                echo ""
+                echo "Available scanners:"
+                echo "  scan-terraform, scan-cloudformation, scan-docker, scan-arm (or scan-azure-arm),"
+                echo "  scan-bicep (or scan-azure-bicep), scan-gcp"
+                echo ""
+                echo "Available tools:"
+                echo "  terraform, tflint, tfsec, checkov, trivy, cfn-lint, bicep"
                 echo ""
                 show_help
                 exit 1
