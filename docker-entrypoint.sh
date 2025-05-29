@@ -1,8 +1,29 @@
 #!/bin/bash
 # DevOps Universal Scanner - Docker Entrypoint
 # Handles auto-detection and provides helpful guidance when volume mounting is missing
+# Includes intelligent daily update system for security packages
 
 set +e  # Don't exit on errors, handle them gracefully
+
+# Function to start background updates (only for non-update commands)
+start_background_updates() {
+    if [ -x "/usr/local/bin/daily-update-manager.sh" ]; then
+        echo "🔒 Checking for security updates (daily check)..."
+        
+        # Use timeout to prevent hanging and redirect all output to avoid pipe issues
+        timeout 5 /usr/local/bin/daily-update-manager.sh auto </dev/null >/dev/null 2>&1 &
+        UPDATE_PID=$!
+        
+        # Give updates a moment to check timestamp, then continue
+        sleep 1
+        
+        # If update is still running after 1 second, it's actually updating
+        if kill -0 $UPDATE_PID 2>/dev/null; then
+            echo "📦 Security updates running in background (PID: $UPDATE_PID)"
+            echo "   Container is ready for use while updates complete"
+        fi
+    fi
+}
 
 # Function to show help
 show_help() {
@@ -20,6 +41,11 @@ show_help() {
     echo "  scan-arm <file>               - Scan Azure ARM templates"
     echo "  scan-bicep <file>             - Scan Azure Bicep files"
     echo "  scan-gcp <file>               - Scan GCP Deployment Manager"
+    echo ""
+    echo "UPDATE COMMANDS:"
+    echo "  update-status                 - Show security update status"
+    echo "  update-force                  - Force security package updates"
+    echo "  update-help                   - Show update manager help"
     echo ""
     echo "EXAMPLES:"
     echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest scan-terraform terraform/"
@@ -79,6 +105,7 @@ provide_volume_mount_guidance() {
 main() {
     # If no arguments, show help
     if [ $# -eq 0 ]; then
+        start_background_updates
         show_help
         exit 0
     fi
@@ -90,10 +117,28 @@ main() {
     # Handle help requests
     case "$COMMAND" in
         help|-h|--help)
+            start_background_updates
             show_help
             exit 0
             ;;
+        update-status)
+            echo "🔍 Checking security update status..."
+            /usr/local/bin/daily-update-manager.sh status
+            exit $?
+            ;;
+        update-force)
+            echo "🔄 Forcing security package updates..."
+            /usr/local/bin/daily-update-manager.sh force
+            exit $?
+            ;;
+        update-help)
+            /usr/local/bin/daily-update-manager.sh help
+            exit $?
+            ;;
     esac
+    
+    # For all other commands, start background updates
+    start_background_updates
     
     # Check if it's a scanner command
     case "$COMMAND" in

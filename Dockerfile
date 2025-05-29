@@ -1,4 +1,4 @@
-FROM alpine:3.21
+FROM alpine:3.21.3
 
 # Install essential build and runtime dependencies
 RUN apk add --no-cache \
@@ -17,22 +17,41 @@ RUN apk add --no-cache \
     openssl \
     file
 
-# Install essential Python tools (using --break-system-packages for Alpine 3.21+)
-RUN pip3 install --no-cache-dir --break-system-packages --upgrade pip && \
-    pip3 install --no-cache-dir --break-system-packages \
-    cfn-lint \
-    checkov
+# Create directories for caching and update tracking
+RUN mkdir -p /var/cache/devops-scanner /var/log/devops-scanner
 
-# Install Terraform
+# Copy the daily update manager script first
+COPY daily-update-manager.sh /usr/local/bin/daily-update-manager.sh
+RUN chmod +x /usr/local/bin/daily-update-manager.sh
+
+# Update setuptools first to fix CVE-2025-47273 (requires setuptools >= 70.4.0)
+# Install essential Python tools with security-focused versions
+RUN pip3 install --no-cache-dir --break-system-packages --upgrade pip setuptools>=75.0.0 && \
+    pip3 install --no-cache-dir --break-system-packages --upgrade \
+    cfn-lint \
+    checkov \
+    asteval \
+    google-cloud-core \
+    google-cloud-storage \
+    google-api-python-client
+
+# Install/update npm packages globally - always use latest versions for security
+RUN npm install -g \
+    ip@latest \
+    cross-spawn@latest \
+    semver@latest \
+    tar@latest
+
+# Install Terraform (use latest to get newer Go stdlib)
 RUN TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
     wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip -d /usr/local/bin && \
     rm terraform_${TERRAFORM_VERSION}_linux_amd64.zip
 
-# Install tflint
+# Install tflint (latest version to get newer Go stdlib)
 RUN curl -s https://raw.githubusercontent.com/terraform-linters/tflint/master/install_linux.sh | bash
 
-# Install tfsec
+# Install tfsec (latest version, though deprecated in favor of Trivy)
 RUN TFSEC_VERSION=$(curl -s "https://api.github.com/repos/aquasecurity/tfsec/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
     wget -q "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-amd64" -O /usr/local/bin/tfsec && \
     chmod +x /usr/local/bin/tfsec
@@ -46,27 +65,26 @@ RUN apk add --no-cache \
     && pip3 install --no-cache-dir --break-system-packages azure-cli-core \
     && apk del gcc python3-dev musl-dev linux-headers
 
-# Install Bicep CLI
+# Install Bicep CLI (always latest release)
 RUN curl -Lo bicep https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && \
     chmod +x ./bicep && \
     mv ./bicep /usr/local/bin/bicep
 
-# Install ARM-TTK (ARM Template Toolkit)
+# Install ARM-TTK (ARM Template Toolkit) - latest from main branch
 RUN mkdir -p /opt/arm-ttk && \
     git clone --depth 1 https://github.com/Azure/arm-ttk.git /opt/arm-ttk && \
     ln -s /opt/arm-ttk/arm-ttk.sh /usr/local/bin/arm-ttk
 
-# Install minimal Google Cloud libraries for GCP Deployment Manager
-# Use minimal packages for validation functionality
-RUN pip3 install --no-cache-dir --break-system-packages \
+# Install minimal Google Cloud libraries for GCP Deployment Manager - latest versions
+RUN pip3 install --no-cache-dir --break-system-packages --upgrade \
     google-cloud-core \
     google-cloud-storage \
     google-api-python-client && \
     mkdir -p /usr/local/bin/gcloud && \
     ln -s /usr/bin/python3 /usr/local/bin/python
 
-# Install Trivy
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.52.0
+# Install Trivy (latest version with newer Go stdlib to fix CVEs)
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin latest
 
 # Create a directory for scripts and tools
 RUN mkdir -p /usr/local/bin/tools
@@ -216,6 +234,10 @@ RUN chmod -R 777 /work
 
 # Make the entrypoint executable
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+
+# Mark initial installation as complete to prevent unnecessary first-run updates
+RUN echo "$(date +%Y-%m-%d)" > /var/cache/devops-scanner/last_update_timestamp && \
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] INFO: Initial installation completed with latest security patches" >> /var/log/devops-scanner/updates.log
 
 # Set default entrypoint to our custom script
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
