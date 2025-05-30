@@ -225,15 +225,35 @@ docker run --rm -v "%cd%:/work" -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY sp
 
 ### Troubleshooting Windows Commands
 
-If you get "docker is not recognized as an internal or external command", you need to:
+If you get "docker is not recognized as an internal or external command", follow these detailed steps:
 
-1. Make sure Docker is installed
-2. Add Docker to your PATH:
-   - Right-click Start > System > Advanced System Settings > Environment Variables
-   - Under "System variables", find the "Path" variable, select it and click "Edit"
-   - Add: `C:\Program Files\Docker\Docker\resources\bin`
-   - Click OK on all dialogs
-   - Restart your Command Prompt
+1. **Verify Docker Installation**
+   - Ensure Docker Desktop is properly installed on your Windows system
+   - Check if Docker Desktop is running (look for the Docker icon in your system tray)
+   - If not running, start Docker Desktop and wait for it to fully initialize
+
+2. **Add Docker to your PATH (Method 1 - Recommended)**
+   - Right-click on Start button > System > Advanced System Settings > Environment Variables
+   - In the "System variables" section (bottom box), find "Path" and click "Edit"
+   - In the "Edit environment variable" window, click "New"
+   - Add exactly: `C:\Program Files\Docker\Docker\resources\bin`
+   - Also add: `C:\Program Files\Docker\Docker\resources\cli-plugins`
+   - Click "OK" on all dialog windows
+   - **Important**: Completely close and reopen Command Prompt
+
+3. **Verify Docker is in PATH**
+   - Open a new Command Prompt window
+   - Type `where docker` and press Enter
+   - If successful, you should see the path to Docker executable
+
+4. **Alternative Solution (Method 2)**
+   - If Method 1 doesn't work, you may need to use the full path to Docker
+   - Try running: `"C:\Program Files\Docker\Docker\resources\bin\docker" run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml`
+
+5. **Additional Troubleshooting**
+   - Restart your computer after adding Docker to PATH
+   - Ensure you're using an administrator Command Prompt
+   - Verify Docker service is running by typing `docker info` in Command Prompt
 
 **PowerShell Core (pwsh):**
 ```powershell
