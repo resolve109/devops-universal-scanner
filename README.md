@@ -103,8 +103,11 @@ docker pull spd109/devops-uat:latest
 # Windows (PowerShell)
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-terraform terraform/
 
-# Windows (Command Prompt)
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform/
+# Windows (Command Prompt) - RECOMMENDED METHOD
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform/
+
+# Windows (Command Prompt) - RECOMMENDED CLOUDFORMATION SCAN
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml
 
 # Linux/macOS
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
@@ -204,20 +207,33 @@ docker run -it --rm -v (pwd):/work spd109/devops-uat:latest scan-terraform ./ter
 docker run -it --rm -v (pwd):/work spd109/devops-uat:latest scan-terraform /path/to/terraform/
 ```
 
-### Terminal Environment Specific Commands
-
-#### Windows Terminal
+### Windows Terminal
 
 **Command Prompt (cmd.exe):**
 ```cmd
 REM Basic scan
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform\
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform\
+
+REM CloudFormation scan - RECOMMENDED METHOD
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml
 
 REM With environment variables
 set AWS_ACCESS_KEY_ID=your_key
 set AWS_SECRET_ACCESS_KEY=your_secret
-docker run -it --rm -v "%cd%:/work" -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY spd109/devops-uat:latest scan-cloudformation template.yaml
+docker run --rm -v "%cd%:/work" -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY spd109/devops-uat:latest scan-cloudformation template.yaml
 ```
+
+### Troubleshooting Windows Commands
+
+If you get "docker is not recognized as an internal or external command", you need to:
+
+1. Make sure Docker is installed
+2. Add Docker to your PATH:
+   - Right-click Start > System > Advanced System Settings > Environment Variables
+   - Under "System variables", find the "Path" variable, select it and click "Edit"
+   - Add: `C:\Program Files\Docker\Docker\resources\bin`
+   - Click OK on all dialogs
+   - Restart your Command Prompt
 
 **PowerShell Core (pwsh):**
 ```powershell
@@ -544,16 +560,16 @@ test-files/
 **Windows (Command Prompt):**
 ```cmd
 REM Test all scanners with included sample files
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
-docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run --rm spd109/devops-uat:latest scan-docker nginx:latest
 
 REM Test specific vulnerable files
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/kubernetes-clusters.tf
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/serverless-vulnerable.yaml
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/kubernetes-clusters.tf
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/serverless-vulnerable.yaml
 ```
 
 **Windows (PowerShell):**
