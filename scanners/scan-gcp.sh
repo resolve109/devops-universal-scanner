@@ -170,4 +170,4 @@ echo "                    SCAN COMPLETED" >> "$OUTPUT_PATH"
 echo "              $(date)" >> "$OUTPUT_PATH"
 echo "=================================================================" >> "$OUTPUT_PATH"
 
-echo "✅ GCP scan completed! Report saved to: gcp-scan-report.log"
+echo "✅ GCP scan completed! Report saved to: gcp-scan-report-${TIMESTAMP}.log"
