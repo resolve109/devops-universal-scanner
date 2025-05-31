@@ -11,9 +11,9 @@ import importlib.util
 from pathlib import Path
 from typing import Dict, List, Any, Optional
 
-# Import the existing ScanResultFormatter from scan-formatter.py
+# Import the existing ScanResultFormatter from scan_formatter.py
 current_dir = os.path.dirname(__file__)
-formatter_path = os.path.join(current_dir, 'scan-formatter.py')
+formatter_path = os.path.join(current_dir, 'scan_formatter.py')
 
 try:
     spec = importlib.util.spec_from_file_location("scan_formatter", formatter_path)

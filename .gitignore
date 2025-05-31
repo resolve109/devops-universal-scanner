@@ -71,4 +71,8 @@ Thumbs.db
 
 # #docker-push
 push-to-dockerhub.bat
-push-to-dockerhub.sh    
+push-to-dockerhub.sh
+
+# Python cache files
+__pycache__/
+*.pyc
