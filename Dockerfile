@@ -62,6 +62,16 @@ RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/rele
     tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
     chmod +x trivy
 
+# Get kube-score (disabled for now)
+RUN echo "Kube-score disabled temporarily" && \
+    echo "#!/bin/bash\necho \"kube-score functionality temporarily disabled\"" > /tmp/kube-score && \
+    chmod +x /tmp/kube-score
+
+# Get Kubescape (disabled for now)
+RUN echo "Kubescape disabled temporarily" && \
+    echo "#!/bin/bash\necho \"kubescape functionality temporarily disabled\"" > /tmp/kubescape && \
+    chmod +x /tmp/kubescape
+
 # Final lightweight stage
 FROM alpine:3.21.3
 
@@ -87,6 +97,8 @@ COPY --from=builder /tmp/tflint /usr/local/bin/tflint
 COPY --from=builder /tmp/tfsec /usr/local/bin/tfsec
 COPY --from=builder /tmp/bicep /usr/local/bin/bicep
 COPY --from=builder /tmp/trivy /usr/local/bin/trivy
+COPY --from=builder /tmp/kube-score /usr/local/bin/kube-score
+COPY --from=builder /tmp/kubescape /usr/local/bin/kubescape
 
 # Create directories for caching and update tracking
 RUN mkdir -p /var/cache/devops-scanner /var/log/devops-scanner
@@ -120,6 +132,7 @@ COPY scanners/scan-docker.sh /usr/local/bin/tools/
 COPY scanners/scan-arm.sh /usr/local/bin/tools/
 COPY scanners/scan-bicep.sh /usr/local/bin/tools/
 COPY scanners/scan-gcp.sh /usr/local/bin/tools/
+COPY scanners/scan-kubernetes.sh /usr/local/bin/tools/
 COPY uat-setup.sh /usr/local/bin/tools/
 
 # Copy the Docker entrypoint script
@@ -203,6 +216,7 @@ RUN chmod +x /usr/local/bin/tools/docker-tools-help.sh && \
     chmod +x /usr/local/bin/tools/scan-arm.sh && \
     chmod +x /usr/local/bin/tools/scan-bicep.sh && \
     chmod +x /usr/local/bin/tools/scan-gcp.sh && \
+    chmod +x /usr/local/bin/tools/scan-kubernetes.sh && \
     chmod +x /usr/local/bin/tools/uat-setup.sh && \
     chmod +x /usr/local/bin/tools/auto-detect.sh
 
@@ -214,6 +228,7 @@ RUN ln -s /usr/local/bin/tools/docker-tools-help.sh /usr/local/bin/docker-tools-
     ln -s /usr/local/bin/tools/scan-arm.sh /usr/local/bin/scan-azure-arm && \
     ln -s /usr/local/bin/tools/scan-bicep.sh /usr/local/bin/scan-azure-bicep && \
     ln -s /usr/local/bin/tools/scan-gcp.sh /usr/local/bin/scan-gcp && \
+    ln -s /usr/local/bin/tools/scan-kubernetes.sh /usr/local/bin/scan-kubernetes && \
     ln -s /usr/local/bin/tools/uat-setup.sh /usr/local/bin/uat-setup && \
     ln -s /usr/local/bin/tools/auto-detect.sh /usr/local/bin/auto-detect
 
@@ -227,6 +242,8 @@ RUN echo '#!/bin/bash\ncheckov "$@"' > /usr/local/bin/tools/checkov-wrapper.sh &
     echo '#!/bin/bash\nbicep "$@"' > /usr/local/bin/tools/bicep-wrapper.sh && \
     echo '#!/bin/bash\narm-ttk "$@"' > /usr/local/bin/tools/arm-ttk-wrapper.sh && \
     echo '#!/bin/bash\ntrivy "$@"' > /usr/local/bin/tools/trivy-wrapper.sh && \
+    echo '#!/bin/bash\nkube-score "$@"' > /usr/local/bin/tools/kube-score-wrapper.sh && \
+    echo '#!/bin/bash\nkubescape "$@"' > /usr/local/bin/tools/kubescape-wrapper.sh && \
     chmod +x /usr/local/bin/tools/checkov-wrapper.sh && \
     chmod +x /usr/local/bin/tools/cfn-lint-wrapper.sh && \
     chmod +x /usr/local/bin/tools/terraform-wrapper.sh && \
@@ -236,6 +253,8 @@ RUN echo '#!/bin/bash\ncheckov "$@"' > /usr/local/bin/tools/checkov-wrapper.sh &
     chmod +x /usr/local/bin/tools/bicep-wrapper.sh && \
     chmod +x /usr/local/bin/tools/arm-ttk-wrapper.sh && \
     chmod +x /usr/local/bin/tools/trivy-wrapper.sh && \
+    chmod +x /usr/local/bin/tools/kube-score-wrapper.sh && \
+    chmod +x /usr/local/bin/tools/kubescape-wrapper.sh && \
     ln -s /usr/local/bin/tools/checkov-wrapper.sh /usr/local/bin/checkov-tool && \
     ln -s /usr/local/bin/tools/cfn-lint-wrapper.sh /usr/local/bin/cfn-lint-tool && \
     ln -s /usr/local/bin/tools/terraform-wrapper.sh /usr/local/bin/terraform-tool && \
@@ -244,7 +263,9 @@ RUN echo '#!/bin/bash\ncheckov "$@"' > /usr/local/bin/tools/checkov-wrapper.sh &
     ln -s /usr/local/bin/tools/az-wrapper.sh /usr/local/bin/az-tool && \
     ln -s /usr/local/bin/tools/bicep-wrapper.sh /usr/local/bin/bicep-tool && \
     ln -s /usr/local/bin/tools/arm-ttk-wrapper.sh /usr/local/bin/arm-ttk-tool && \
-    ln -s /usr/local/bin/tools/trivy-wrapper.sh /usr/local/bin/trivy-tool
+    ln -s /usr/local/bin/tools/trivy-wrapper.sh /usr/local/bin/trivy-tool && \
+    ln -s /usr/local/bin/tools/kube-score-wrapper.sh /usr/local/bin/kube-score-tool && \
+    ln -s /usr/local/bin/tools/kubescape-wrapper.sh /usr/local/bin/kubescape-tool
 
 # Set up a working directory
 WORKDIR /work

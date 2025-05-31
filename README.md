@@ -85,6 +85,7 @@ All commands generate detailed `.log` files with full terminal output:
 | `scan-arm` | Azure ARM templates | ARM-TTK, Checkov |
 | `scan-bicep` | Azure Bicep templates | Bicep CLI, Checkov |
 | `scan-gcp` | GCP Deployment Manager | Checkov, GCloud validation |
+| `scan-kubernetes` | Kubernetes manifests | kube-score, Kubescape |
 
 ## Quick Start
 
@@ -103,8 +104,11 @@ docker pull spd109/devops-uat:latest
 # Windows (PowerShell)
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-terraform terraform/
 
-# Windows (Command Prompt)
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform/
+# Windows (Command Prompt) - RECOMMENDED METHOD
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform/
+
+# Windows (Command Prompt) - RECOMMENDED CLOUDFORMATION SCAN
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml
 
 # Linux/macOS
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform terraform/
@@ -140,6 +144,9 @@ docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-bicep templa
 
 # GCP templates
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-gcp template.yaml
+
+# Kubernetes manifests
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-kubernetes kubernetes/
 ```
 
 ### Cross-Platform Command Reference
@@ -204,20 +211,53 @@ docker run -it --rm -v (pwd):/work spd109/devops-uat:latest scan-terraform ./ter
 docker run -it --rm -v (pwd):/work spd109/devops-uat:latest scan-terraform /path/to/terraform/
 ```
 
-### Terminal Environment Specific Commands
-
-#### Windows Terminal
+### Windows Terminal
 
 **Command Prompt (cmd.exe):**
 ```cmd
 REM Basic scan
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform\
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform terraform\
+
+REM CloudFormation scan - RECOMMENDED METHOD
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml
 
 REM With environment variables
 set AWS_ACCESS_KEY_ID=your_key
 set AWS_SECRET_ACCESS_KEY=your_secret
-docker run -it --rm -v "%cd%:/work" -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY spd109/devops-uat:latest scan-cloudformation template.yaml
+docker run --rm -v "%cd%:/work" -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY spd109/devops-uat:latest scan-cloudformation template.yaml
 ```
+
+### Troubleshooting Windows Commands
+
+If you get "docker is not recognized as an internal or external command", follow these detailed steps:
+
+1. **Verify Docker Installation**
+   - Ensure Docker Desktop is properly installed on your Windows system
+   - Check if Docker Desktop is running (look for the Docker icon in your system tray)
+   - If not running, start Docker Desktop and wait for it to fully initialize
+
+2. **Add Docker to your PATH (Method 1 - Recommended)**
+   - Right-click on Start button > System > Advanced System Settings > Environment Variables
+   - In the "System variables" section (bottom box), find "Path" and click "Edit"
+   - In the "Edit environment variable" window, click "New"
+   - Add exactly: `C:\Program Files\Docker\Docker\resources\bin`
+   - Also add: `C:\Program Files\Docker\Docker\resources\cli-plugins`
+   - Click "OK" on all dialog windows
+   - **Important**: Completely close and reopen Command Prompt
+
+3. **Verify Docker is in PATH**
+   - Open a new Command Prompt window
+   - Type `where docker` and press Enter
+   - If successful, you should see the path to Docker executable
+
+4. **Alternative Solution (Method 2)**
+   - If Method 1 doesn't work, you may need to use the full path to Docker
+   - Try running: `"C:\Program Files\Docker\Docker\resources\bin\docker" run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml`
+
+5. **Additional Troubleshooting**
+   - Restart your computer after adding Docker to PATH
+   - Ensure you're using an administrator Command Prompt
+   - Verify Docker service is running by typing `docker info` in Command Prompt
 
 **PowerShell Core (pwsh):**
 ```powershell
@@ -544,16 +584,17 @@ test-files/
 **Windows (Command Prompt):**
 ```cmd
 REM Test all scanners with included sample files
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
-docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-kubernetes test-files/kubernetes/
+docker run --rm spd109/devops-uat:latest scan-docker nginx:latest
 
 REM Test specific vulnerable files
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/kubernetes-clusters.tf
-docker run -it --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/serverless-vulnerable.yaml
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-terraform test-files/terraform/kubernetes-clusters.tf
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/serverless-vulnerable.yaml
 ```
 
 **Windows (PowerShell):**
@@ -564,6 +605,7 @@ docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-cloudformati
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-kubernetes test-files/kubernetes/
 docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
 ```
 
@@ -575,6 +617,7 @@ docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformati
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-kubernetes test-files/kubernetes/
 docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
 ```
 
@@ -622,6 +665,7 @@ Each test file should trigger multiple security findings:
 - `scanners/scan-arm.sh` - ARM-TTK + Checkov
 - `scanners/scan-bicep.sh` - Bicep CLI + Checkov
 - `scanners/scan-gcp.sh` - Checkov + GCloud validation
+- `scanners/scan-kubernetes.sh` - kube-score + Kubescape
 
 ## Troubleshooting
 
