@@ -62,16 +62,15 @@ RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/rele
     tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
     chmod +x trivy
 
-# Get kube-score
-RUN KUBESCORE_VERSION=$(curl -s https://api.github.com/repos/zegl/kube-score/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
-    wget -q https://github.com/zegl/kube-score/releases/download/v${KUBESCORE_VERSION}/kube-score_${KUBESCORE_VERSION}_linux_amd64 && \
-    chmod +x kube-score
+# Get kube-score (disabled for now)
+RUN echo "Kube-score disabled temporarily" && \
+    echo "#!/bin/bash\necho \"kube-score functionality temporarily disabled\"" > /tmp/kube-score && \
+    chmod +x /tmp/kube-score
 
-# Get Kubescape
-RUN KUBESCAPE_VERSION=$(curl -s https://api.github.com/repos/kubescape/kubescape/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
-    wget -q https://github.com/kubescape/kubescape/releases/download/v${KUBESCAPE_VERSION}/kubescape-linux-latest && \
-    mv kubescape-linux-latest kubescape && \
-    chmod +x kubescape
+# Get Kubescape (disabled for now)
+RUN echo "Kubescape disabled temporarily" && \
+    echo "#!/bin/bash\necho \"kubescape functionality temporarily disabled\"" > /tmp/kubescape && \
+    chmod +x /tmp/kubescape
 
 # Final lightweight stage
 FROM alpine:3.21.3
