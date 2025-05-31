@@ -8,7 +8,7 @@ set +e  # Don't exit on errors, handle them gracefully
 # Function to start background updates (only for non-update commands)
 start_background_updates() {
     if [ -x "/usr/local/bin/daily-update-manager.sh" ]; then
-        echo "🔒 Checking for security updates (daily check)..."
+        echo "[SECURITY] Checking for security updates (daily check)..."
         
         # Use timeout to prevent hanging and redirect all output to avoid pipe issues
         timeout 5 /usr/local/bin/daily-update-manager.sh auto </dev/null >/dev/null 2>&1 &
@@ -19,7 +19,7 @@ start_background_updates() {
         
         # If update is still running after 1 second, it's actually updating
         if kill -0 $UPDATE_PID 2>/dev/null; then
-            echo "📦 Security updates running in background (PID: $UPDATE_PID)"
+            echo "[UPDATE] Security updates running in background (PID: $UPDATE_PID)"
             echo "   Container is ready for use while updates complete"
         fi
     fi
@@ -28,7 +28,7 @@ start_background_updates() {
 # Function to show help
 show_help() {
     echo "================================================================"
-    echo "🚀 DevOps Universal Scanner - Docker Container"
+    echo "[INFO] DevOps Universal Scanner - Docker Container"
     echo "================================================================"
     echo ""
     echo "USAGE:"
@@ -51,7 +51,7 @@ show_help() {
     echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest scan-terraform terraform/"
     echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest scan-docker nginx:latest"
     echo ""
-    echo "📁 Current working directory contents:"
+    echo "[INFO] Current working directory contents:"
     ls -la /work 2>/dev/null || echo "   (No files found - volume mount required for file scanning)"
     echo ""
 }
@@ -69,11 +69,11 @@ provide_volume_mount_guidance() {
     local scan_type="$1"
     local target="$2"
     
-    echo "❌ ERROR: No files found in container working directory"
+    echo "[ERROR] No files found in container working directory"
     echo ""
-    echo "🔧 SOLUTION: Add volume mount to access your files"
+    echo "[SOLUTION] Add volume mount to access your files"
     echo ""
-    echo "💡 Try this command instead:"
+    echo "[TIP] Try this command instead:"
     
     # Platform-specific guidance
     if [ -n "$target" ] && [[ "$target" != *":"* ]]; then
@@ -98,7 +98,7 @@ provide_volume_mount_guidance() {
         echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest $scan_type ${target:-'<your-target>'}"
     fi
     echo ""
-    echo "💡 Remember: Volume mounting (-v flag) is required for file-based scans!"
+    echo "[IMPORTANT] Remember: Volume mounting (-v flag) is required for file-based scans!"
 }
 
 # Main entrypoint logic
@@ -122,12 +122,12 @@ main() {
             exit 0
             ;;
         update-status)
-            echo "🔍 Checking security update status..."
+            echo "[INFO] Checking security update status..."
             /usr/local/bin/daily-update-manager.sh status
             exit $?
             ;;
         update-force)
-            echo "🔄 Forcing security package updates..."
+            echo "[INFO] Forcing security package updates..."
             /usr/local/bin/daily-update-manager.sh force
             exit $?
             ;;
@@ -148,7 +148,7 @@ main() {
             # For Docker image scanning, don't require volume mount
             if [ "$COMMAND" = "scan-docker" ]; then
                 if [ -z "$TARGET" ]; then
-                    echo "❌ ERROR: Docker image name required"
+                    echo "[ERROR] Docker image name required"
                     echo "Usage: scan-docker <image_name>"
                     echo "Example: scan-docker nginx:latest"
                     exit 1
@@ -189,10 +189,10 @@ main() {
                 exec "/usr/local/bin/$COMMAND" "$@"
             elif [ "$COMMAND" = "terraform" ] || [ "$COMMAND" = "tflint" ] || [ "$COMMAND" = "tfsec" ] || [ "$COMMAND" = "checkov" ] || [ "$COMMAND" = "trivy" ] || [ "$COMMAND" = "bicep" ] || [ "$COMMAND" = "cfn-lint" ]; then
                 # Direct tool execution for common tools
-                echo "🔄 Running $COMMAND directly..."
+                echo "[INFO] Running $COMMAND directly..."
                 exec "/usr/local/bin/$COMMAND" "$@"
             else
-                echo "❌ ERROR: Unknown command '$COMMAND'"
+                echo "[ERROR] Unknown command '$COMMAND'"
                 echo ""
                 echo "Available scanners:"
                 echo "  scan-terraform, scan-cloudformation, scan-docker, scan-arm (or scan-azure-arm),"
