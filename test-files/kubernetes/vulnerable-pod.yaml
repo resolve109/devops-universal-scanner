@@ -1,0 +1,22 @@
+# WARNING: This Kubernetes pod contains intentional security vulnerabilities
+# DO NOT USE IN PRODUCTION!
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: vulnerable-pod
+spec:
+  containers:
+  - name: app
+    image: nginx:1.10
+    securityContext:
+      privileged: true
+    env:
+    - name: SECRET_TOKEN
+      value: "abcdef123456"
+  hostNetwork: true
+  volumes:
+  - name: host-volume
+    hostPath:
+      path: /etc
+      type: Directory

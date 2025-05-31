@@ -39,6 +39,8 @@ Terraform Tools:
 Security Tools:
   - snyk-tool iac test <file>             # Snyk security scanner
   - detect-secrets scan <file>            # Secrets detection
+  - kube-score-tool <file>               # Kubernetes best-practice analysis
+  - kubescape-tool scan <path>           # Kubernetes security scanning
 
 Utility Commands:
   - update-tools                          # Updates all tools to latest versions
