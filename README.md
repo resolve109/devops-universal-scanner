@@ -85,6 +85,7 @@ All commands generate detailed `.log` files with full terminal output:
 | `scan-arm` | Azure ARM templates | ARM-TTK, Checkov |
 | `scan-bicep` | Azure Bicep templates | Bicep CLI, Checkov |
 | `scan-gcp` | GCP Deployment Manager | Checkov, GCloud validation |
+| `scan-kubernetes` | Kubernetes manifests | kube-score, Kubescape |
 
 ## Quick Start
 
@@ -143,6 +144,9 @@ docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-bicep templa
 
 # GCP templates
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-gcp template.yaml
+
+# Kubernetes manifests
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-kubernetes kubernetes/
 ```
 
 ### Cross-Platform Command Reference
@@ -585,6 +589,7 @@ docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-cloudformation tes
 docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
 docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
 docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run --rm -v "%cd%:/work" spd109/devops-uat:latest scan-kubernetes test-files/kubernetes/
 docker run --rm spd109/devops-uat:latest scan-docker nginx:latest
 
 REM Test specific vulnerable files
@@ -600,6 +605,7 @@ docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-cloudformati
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
 docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run -it --rm -v "${PWD}:/work" spd109/devops-uat:latest scan-kubernetes test-files/kubernetes/
 docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
 ```
 
@@ -611,6 +617,7 @@ docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformati
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-arm test-files/azure-arm/
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-bicep test-files/azure-bicep/
 docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-gcp test-files/gcp-deployment-manager/
+docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-kubernetes test-files/kubernetes/
 docker run -it --rm spd109/devops-uat:latest scan-docker nginx:latest
 ```
 
@@ -658,6 +665,7 @@ Each test file should trigger multiple security findings:
 - `scanners/scan-arm.sh` - ARM-TTK + Checkov
 - `scanners/scan-bicep.sh` - Bicep CLI + Checkov
 - `scanners/scan-gcp.sh` - Checkov + GCloud validation
+- `scanners/scan-kubernetes.sh` - kube-score + Kubescape
 
 ## Troubleshooting
 
