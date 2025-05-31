@@ -41,6 +41,7 @@ show_help() {
     echo "  scan-arm <file>               - Scan Azure ARM templates"
     echo "  scan-bicep <file>             - Scan Azure Bicep files"
     echo "  scan-gcp <file>               - Scan GCP Deployment Manager"
+    echo "  scan-kubernetes <path>        - Scan Kubernetes manifests"
     echo ""
     echo "UPDATE COMMANDS:"
     echo "  update-status                 - Show security update status"
@@ -50,6 +51,7 @@ show_help() {
     echo "EXAMPLES:"
     echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest scan-terraform terraform/"
     echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest scan-docker nginx:latest"
+    echo "  docker run -it --rm -v \"\$(pwd):/work\" spd109/devops-uat:latest scan-kubernetes kubernetes/"
     echo ""
     echo "📁 Current working directory contents:"
     ls -la /work 2>/dev/null || echo "   (No files found - volume mount required for file scanning)"
@@ -142,7 +144,7 @@ main() {
     
     # Check if it's a scanner command
     case "$COMMAND" in
-        scan-terraform|scan-cloudformation|scan-docker|scan-arm|scan-bicep|scan-gcp)
+        scan-terraform|scan-cloudformation|scan-docker|scan-arm|scan-bicep|scan-gcp|scan-kubernetes)
             TARGET="$1"
             
             # For Docker image scanning, don't require volume mount
@@ -179,6 +181,9 @@ main() {
                 scan-gcp)
                     exec /usr/local/bin/tools/scan-gcp.sh "$@"
                     ;;
+                scan-kubernetes)
+                    exec /usr/local/bin/tools/scan-kubernetes.sh "$@"
+                    ;;
             esac
             ;;
         *)
@@ -196,10 +201,10 @@ main() {
                 echo ""
                 echo "Available scanners:"
                 echo "  scan-terraform, scan-cloudformation, scan-docker, scan-arm (or scan-azure-arm),"
-                echo "  scan-bicep (or scan-azure-bicep), scan-gcp"
+                echo "  scan-bicep (or scan-azure-bicep), scan-gcp, scan-kubernetes"
                 echo ""
                 echo "Available tools:"
-                echo "  terraform, tflint, tfsec, checkov, trivy, cfn-lint, bicep"
+                echo "  terraform, tflint, tfsec, checkov, trivy, cfn-lint, bicep, kube-score, kubescape"
                 echo ""
                 show_help
                 exit 1
