@@ -28,7 +28,8 @@ RUN pip install --no-cache-dir --upgrade pip setuptools>=75.0.0 && \
     google-cloud-storage==2.10.* \
     google-api-python-client==2.108.* \
     azure-cli-core==2.55.* \
-    asteval==0.9.31
+    asteval==0.9.31 \
+    PyYAML
 
 # Download and extract binaries
 WORKDIR /tmp
@@ -140,6 +141,9 @@ COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 
 # Copy helper modules
 COPY helpers/ /usr/local/bin/helpers/
+
+# Copy native intelligence analyzers
+COPY analyzers/ /usr/local/bin/analyzers/
 
 # Create auto-detection script (simplified)
 RUN echo '#!/bin/bash\n\

@@ -130,6 +130,29 @@ else
     log_warning "AWS CLI not available - skipping AWS validation"
 fi
 
+# Enhanced Native Intelligence Section
+log_section "🎯 Running Native Intelligence Analysis"
+
+log_message "Running enhanced FinOps, Security, and AI/ML analysis..."
+
+# Detect environment from tags or default to development
+ENVIRONMENT="${ENVIRONMENT:-development}"
+
+# Run enhanced scanner (Python)
+if [ -f "/usr/local/bin/analyzers/enhanced_scanner.py" ]; then
+    python3 /usr/local/bin/analyzers/enhanced_scanner.py cloudformation "$TARGET" --environment "$ENVIRONMENT" 2>&1 | tee -a "$OUTPUT_PATH"
+    ENHANCED_EXIT=$?
+
+    if [ $ENHANCED_EXIT -eq 0 ]; then
+        log_success "Enhanced intelligence analysis completed"
+    else
+        log_warning "Enhanced intelligence analysis completed with warnings (exit code: $ENHANCED_EXIT)"
+    fi
+else
+    log_warning "Enhanced scanner not found - skipping native intelligence analysis"
+    ENHANCED_EXIT=127
+fi
+
 # Summary Section
 log_section "📊 Scan Summary and Results"
 
