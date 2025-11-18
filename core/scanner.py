@@ -22,6 +22,7 @@ from core.cve.tool_cve_scanner import ToolCVEScanner
 from core.cve.ami_cve_scanner import AMICVEScanner
 from core.cve.image_cve_scanner import ImageCVEScanner
 from core.pricing.aws_pricing import AWSPricingAPI
+from core.knowledge import get_policy_loader, get_custom_rules_engine
 
 
 class Scanner:
