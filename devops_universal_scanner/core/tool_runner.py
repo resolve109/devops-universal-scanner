@@ -87,15 +87,21 @@ class ToolRunner:
 
         except subprocess.TimeoutExpired:
             self.logger.error(f"{tool_name} timed out after 5 minutes")
-            return ToolResult(tool_name, -1, "", "Timeout")
+            tool_result = ToolResult(tool_name, -1, "", "Timeout")
+            self.results[tool_name] = tool_result
+            return tool_result
 
         except FileNotFoundError:
             self.logger.error(f"{tool_name} not found in PATH")
-            return ToolResult(tool_name, -1, "", "Not found")
+            tool_result = ToolResult(tool_name, -1, "", "Not found")
+            self.results[tool_name] = tool_result
+            return tool_result
 
         except Exception as e:
             self.logger.error(f"{tool_name} execution failed: {e}")
-            return ToolResult(tool_name, -1, "", str(e))
+            tool_result = ToolResult(tool_name, -1, "", str(e))
+            self.results[tool_name] = tool_result
+            return tool_result
 
     def run_cfn_lint(self, target: Path) -> ToolResult:
         """Run cfn-lint on CloudFormation template"""
