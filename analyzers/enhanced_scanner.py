@@ -26,6 +26,12 @@ from analyzers.aiml.gpu_cost_analyzer import GPUCostAnalyzer
 from analyzers.security.enhanced_checks import EnhancedSecurityChecker
 from analyzers.reporting.report_generator import EnhancedReportGenerator
 
+# Import pricing and CVE modules
+from analyzers.core.pricing.aws_pricing import AWSPricingAPI
+from analyzers.core.cve.tool_cve_scanner import ToolCVEScanner
+from analyzers.core.cve.ami_cve_scanner import AMICVEScanner
+from analyzers.core.cve.image_cve_scanner import ImageCVEScanner
+
 
 class EnhancedScanner:
     """
@@ -51,6 +57,12 @@ class EnhancedScanner:
         self.idle_detector = IdleResourceDetector()
         self.gpu_analyzer = GPUCostAnalyzer()
         self.security_checker = EnhancedSecurityChecker()
+
+        # Initialize pricing and CVE scanners
+        self.pricing_api = AWSPricingAPI()
+        self.tool_cve_scanner = ToolCVEScanner()
+        self.ami_cve_scanner = AMICVEScanner()
+        self.image_cve_scanner = ImageCVEScanner()
 
     def scan(self) -> str:
         """Run complete scan with all tools and analyzers"""
@@ -101,6 +113,16 @@ class EnhancedScanner:
         print("⚠️  Checking for idle resources...")
         idle_warnings = self.idle_detector.analyze(resources, cost_breakdowns)
 
+        # Step 6: Run CVE scans
+        print("🔐 Scanning for CVEs...")
+        tool_cves = self.tool_cve_scanner.scan_all_tools()
+        ami_cves = self.ami_cve_scanner.scan_template(self.file_content, "cloudformation")
+        image_cves = self.image_cve_scanner.scan_template(self.file_content)
+
+        # Step 7: Get pricing API status
+        print("💵 Checking live pricing API status...")
+        pricing_status = self.pricing_api.get_pricing_status()
+
         # Generate enhanced report
         print(f"\n{'='*80}")
         print("📊 GENERATING ENHANCED REPORT")
@@ -111,7 +133,11 @@ class EnhancedScanner:
             optimizations,
             gpu_recommendations,
             security_insights,
-            idle_warnings
+            idle_warnings,
+            tool_cves,
+            ami_cves,
+            image_cves,
+            pricing_status
         )
 
         return report
@@ -142,6 +168,16 @@ class EnhancedScanner:
         print("⚠️  Checking for idle resources...")
         idle_warnings = self.idle_detector.analyze(resources, cost_breakdowns)
 
+        # Step 6: Run CVE scans
+        print("🔐 Scanning for CVEs...")
+        tool_cves = self.tool_cve_scanner.scan_all_tools()
+        ami_cves = self.ami_cve_scanner.scan_template(self.file_content, "terraform")
+        image_cves = self.image_cve_scanner.scan_template(self.file_content)
+
+        # Step 7: Get pricing API status
+        print("💵 Checking live pricing API status...")
+        pricing_status = self.pricing_api.get_pricing_status()
+
         # Generate enhanced report
         print(f"\n{'='*80}")
         print("📊 GENERATING ENHANCED REPORT")
@@ -152,13 +188,18 @@ class EnhancedScanner:
             optimizations,
             gpu_recommendations,
             security_insights,
-            idle_warnings
+            idle_warnings,
+            tool_cves,
+            ami_cves,
+            image_cves,
+            pricing_status
         )
 
         return report
 
     def _generate_enhanced_report(self, cost_breakdowns, optimizations, gpu_recommendations,
-                                  security_insights, idle_warnings) -> str:
+                                  security_insights, idle_warnings, tool_cves, ami_cves,
+                                  image_cves, pricing_status) -> str:
         """Generate comprehensive enhanced report"""
         lines = []
 
@@ -168,9 +209,26 @@ class EnhancedScanner:
         lines.append("🎯 NATIVE INTELLIGENCE ANALYSIS")
         lines.append("=" * 80)
 
-        # Cost Analysis
+        # CVE Scans - Show first (security priority)
+        lines.append(self.tool_cve_scanner.generate_report())
+
+        if ami_cves:
+            lines.append(self.ami_cve_scanner.generate_report())
+
+        if image_cves:
+            lines.append(self.image_cve_scanner.generate_report())
+
+        # Cost Analysis (with pricing API status)
         if cost_breakdowns:
             lines.append(self.cost_analyzer.generate_cost_report())
+            # Add pricing API status
+            lines.append("")
+            lines.append("💵 PRICING DATA SOURCE:")
+            lines.append(f"   Provider: {pricing_status['provider']}")
+            lines.append(f"   Region: {pricing_status['region']}")
+            lines.append(f"   API Status: {'✅ Live' if pricing_status.get('api_available') else '⚠️  Using Fallback'}")
+            lines.append(f"   {pricing_status.get('note', '')}")
+            lines.append("")
 
         # Optimization Recommendations
         if optimizations:
@@ -196,6 +254,16 @@ class EnhancedScanner:
         total_cost = self.cost_analyzer.get_total_monthly_cost()
         total_savings = self.optimization_recommender.get_total_potential_savings()
 
+        # CVE Summary
+        tools_with_cves = len([t for t in tool_cves if t.has_cve])
+        amis_with_cves = len([a for a in ami_cves if a.has_cve]) if ami_cves else 0
+        lines.append(f"🔐 CVE Scan Results:")
+        lines.append(f"   Tools with CVEs: {tools_with_cves}/{len(tool_cves)}")
+        if ami_cves:
+            lines.append(f"   AMIs with CVEs: {amis_with_cves}/{len(ami_cves)}")
+        lines.append("")
+
+        # Cost Summary
         if total_cost > 0:
             lines.append(f"💰 Total Monthly Cost: ${total_cost:,.2f}")
         if total_savings > 0:
