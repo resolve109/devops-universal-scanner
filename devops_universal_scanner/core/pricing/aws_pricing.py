@@ -10,7 +10,7 @@ import urllib.request
 import urllib.error
 from typing import Dict, Optional, Tuple
 from datetime import datetime
-from core.pricing.pricing_cache import PricingCache
+from devops_universal_scanner.core.pricing.pricing_cache import PricingCache
 
 
 class AWSPricingAPI:
@@ -105,7 +105,7 @@ class AWSPricingAPI:
 
     def _get_static_ec2_price(self, instance_type: str) -> Dict:
         """Fallback to static pricing data"""
-        from core.data.cost_estimates import AWS_COST_ESTIMATES
+        from devops_universal_scanner.core.data.cost_estimates import AWS_COST_ESTIMATES
 
         ec2_prices = AWS_COST_ESTIMATES.get("aws_instance", {})
         monthly_cost = ec2_prices.get(instance_type, 0.0)
@@ -122,7 +122,7 @@ class AWSPricingAPI:
 
     def get_rds_pricing(self, instance_class: str, engine: str = "mysql") -> Optional[Dict]:
         """Get RDS instance pricing"""
-        from core.data.cost_estimates import AWS_COST_ESTIMATES
+        from devops_universal_scanner.core.data.cost_estimates import AWS_COST_ESTIMATES
 
         rds_prices = AWS_COST_ESTIMATES.get("aws_db_instance", {})
         monthly_cost = rds_prices.get(instance_class, 0.0)
@@ -139,7 +139,7 @@ class AWSPricingAPI:
 
     def get_ebs_pricing(self, volume_type: str, size_gb: int = 100) -> Optional[Dict]:
         """Get EBS volume pricing"""
-        from core.data.cost_estimates import AWS_COST_ESTIMATES
+        from devops_universal_scanner.core.data.cost_estimates import AWS_COST_ESTIMATES
 
         ebs_prices = AWS_COST_ESTIMATES.get("aws_ebs_volume", {})
         price_per_gb = ebs_prices.get(volume_type, 0.0)
@@ -157,7 +157,7 @@ class AWSPricingAPI:
 
     def get_s3_pricing(self, storage_class: str = "standard", size_gb: int = 1000) -> Optional[Dict]:
         """Get S3 storage pricing"""
-        from core.data.cost_estimates import AWS_COST_ESTIMATES
+        from devops_universal_scanner.core.data.cost_estimates import AWS_COST_ESTIMATES
 
         s3_prices = AWS_COST_ESTIMATES.get("aws_s3_bucket", {})
         price_per_gb = s3_prices.get(storage_class, 0.023)

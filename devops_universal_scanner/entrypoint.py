@@ -31,7 +31,6 @@ class DockerEntrypoint:
 
     def __init__(self):
         self.work_dir = Path("/work")
-        self.cli_path = Path(__file__).parent / "cli.py"
 
     def validate_volume_mount(self) -> bool:
         """
@@ -213,10 +212,11 @@ MORE INFO:
         # Change to /work directory
         os.chdir(self.work_dir)
 
-        # Build CLI command
+        # Build CLI command using Python module
         cli_command = [
             "python3",
-            str(self.cli_path),
+            "-m",
+            "devops_universal_scanner",
             scan_type,
             target
         ] + extra_args

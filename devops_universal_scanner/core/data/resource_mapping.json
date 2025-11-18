@@ -1,0 +1,228 @@
+{
+  "compute": {
+    "aws_ec2_instance": {
+      "terraform": "aws_instance",
+      "cloudformation": "AWS::EC2::Instance",
+      "pulumi": "aws.ec2.Instance",
+      "cdk": "ec2.Instance",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "ec2_instance"
+    },
+    "azure_vm": {
+      "terraform": "azurerm_virtual_machine",
+      "arm": "Microsoft.Compute/virtualMachines",
+      "bicep": "Microsoft.Compute/virtualMachines",
+      "pulumi": "azure.compute.VirtualMachine",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "virtual_machine"
+    },
+    "gcp_compute_instance": {
+      "terraform": "google_compute_instance",
+      "deployment_manager": "compute.v1.instance",
+      "pulumi": "gcp.compute.Instance",
+      "resource_type": "compute",
+      "cloud_provider": "gcp",
+      "canonical_name": "compute_instance"
+    }
+  },
+  "storage": {
+    "aws_s3_bucket": {
+      "terraform": "aws_s3_bucket",
+      "cloudformation": "AWS::S3::Bucket",
+      "pulumi": "aws.s3.Bucket",
+      "cdk": "s3.Bucket",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_bucket"
+    },
+    "aws_ebs_volume": {
+      "terraform": "aws_ebs_volume",
+      "cloudformation": "AWS::EC2::Volume",
+      "pulumi": "aws.ebs.Volume",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "ebs_volume"
+    },
+    "azure_storage_account": {
+      "terraform": "azurerm_storage_account",
+      "arm": "Microsoft.Storage/storageAccounts",
+      "bicep": "Microsoft.Storage/storageAccounts",
+      "pulumi": "azure.storage.Account",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "storage_account"
+    },
+    "gcp_storage_bucket": {
+      "terraform": "google_storage_bucket",
+      "deployment_manager": "storage.v1.bucket",
+      "pulumi": "gcp.storage.Bucket",
+      "resource_type": "storage",
+      "cloud_provider": "gcp",
+      "canonical_name": "storage_bucket"
+    }
+  },
+  "database": {
+    "aws_rds_instance": {
+      "terraform": "aws_db_instance",
+      "cloudformation": "AWS::RDS::DBInstance",
+      "pulumi": "aws.rds.Instance",
+      "cdk": "rds.DatabaseInstance",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "rds_instance"
+    },
+    "aws_dynamodb_table": {
+      "terraform": "aws_dynamodb_table",
+      "cloudformation": "AWS::DynamoDB::Table",
+      "pulumi": "aws.dynamodb.Table",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "dynamodb_table"
+    },
+    "azure_sql_database": {
+      "terraform": "azurerm_mssql_database",
+      "arm": "Microsoft.Sql/servers/databases",
+      "bicep": "Microsoft.Sql/servers/databases",
+      "pulumi": "azure.sql.Database",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "sql_database"
+    },
+    "gcp_sql_instance": {
+      "terraform": "google_sql_database_instance",
+      "deployment_manager": "sqladmin.v1beta4.instance",
+      "pulumi": "gcp.sql.DatabaseInstance",
+      "resource_type": "database",
+      "cloud_provider": "gcp",
+      "canonical_name": "sql_instance"
+    }
+  },
+  "networking": {
+    "aws_vpc": {
+      "terraform": "aws_vpc",
+      "cloudformation": "AWS::EC2::VPC",
+      "pulumi": "aws.ec2.Vpc",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "vpc"
+    },
+    "aws_alb": {
+      "terraform": "aws_lb",
+      "cloudformation": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "pulumi": "aws.lb.LoadBalancer",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "load_balancer"
+    },
+    "azure_vnet": {
+      "terraform": "azurerm_virtual_network",
+      "arm": "Microsoft.Network/virtualNetworks",
+      "bicep": "Microsoft.Network/virtualNetworks",
+      "pulumi": "azure.network.VirtualNetwork",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "virtual_network"
+    },
+    "gcp_network": {
+      "terraform": "google_compute_network",
+      "deployment_manager": "compute.v1.network",
+      "pulumi": "gcp.compute.Network",
+      "resource_type": "networking",
+      "cloud_provider": "gcp",
+      "canonical_name": "network"
+    }
+  },
+  "serverless": {
+    "aws_lambda": {
+      "terraform": "aws_lambda_function",
+      "cloudformation": "AWS::Lambda::Function",
+      "pulumi": "aws.lambda.Function",
+      "cdk": "lambda.Function",
+      "serverless": "AWS::Serverless::Function",
+      "resource_type": "serverless",
+      "cloud_provider": "aws",
+      "canonical_name": "lambda_function"
+    },
+    "azure_function": {
+      "terraform": "azurerm_function_app",
+      "arm": "Microsoft.Web/sites",
+      "bicep": "Microsoft.Web/sites",
+      "pulumi": "azure.appservice.FunctionApp",
+      "resource_type": "serverless",
+      "cloud_provider": "azure",
+      "canonical_name": "function_app"
+    },
+    "gcp_function": {
+      "terraform": "google_cloudfunctions_function",
+      "deployment_manager": "cloudfunctions.v1.function",
+      "pulumi": "gcp.cloudfunctions.Function",
+      "resource_type": "serverless",
+      "cloud_provider": "gcp",
+      "canonical_name": "cloud_function"
+    }
+  },
+  "ai_ml": {
+    "aws_sagemaker_endpoint": {
+      "terraform": "aws_sagemaker_endpoint",
+      "cloudformation": "AWS::SageMaker::Endpoint",
+      "pulumi": "aws.sagemaker.Endpoint",
+      "resource_type": "ai_ml",
+      "cloud_provider": "aws",
+      "canonical_name": "sagemaker_endpoint"
+    },
+    "azure_ml_workspace": {
+      "terraform": "azurerm_machine_learning_workspace",
+      "arm": "Microsoft.MachineLearningServices/workspaces",
+      "bicep": "Microsoft.MachineLearningServices/workspaces",
+      "pulumi": "azure.machinelearning.Workspace",
+      "resource_type": "ai_ml",
+      "cloud_provider": "azure",
+      "canonical_name": "ml_workspace"
+    },
+    "gcp_ai_platform": {
+      "terraform": "google_ml_engine_model",
+      "deployment_manager": "ml.v1.model",
+      "pulumi": "gcp.ml.EngineModel",
+      "resource_type": "ai_ml",
+      "cloud_provider": "gcp",
+      "canonical_name": "ml_model"
+    }
+  },
+  "container": {
+    "aws_ecs_service": {
+      "terraform": "aws_ecs_service",
+      "cloudformation": "AWS::ECS::Service",
+      "pulumi": "aws.ecs.Service",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "ecs_service"
+    },
+    "aws_eks_cluster": {
+      "terraform": "aws_eks_cluster",
+      "cloudformation": "AWS::EKS::Cluster",
+      "pulumi": "aws.eks.Cluster",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "eks_cluster"
+    },
+    "azure_aks_cluster": {
+      "terraform": "azurerm_kubernetes_cluster",
+      "arm": "Microsoft.ContainerService/managedClusters",
+      "bicep": "Microsoft.ContainerService/managedClusters",
+      "pulumi": "azure.containerservice.KubernetesCluster",
+      "resource_type": "container",
+      "cloud_provider": "azure",
+      "canonical_name": "aks_cluster"
+    },
+    "gcp_gke_cluster": {
+      "terraform": "google_container_cluster",
+      "deployment_manager": "container.v1.cluster",
+      "pulumi": "gcp.container.Cluster",
+      "resource_type": "container",
+      "cloud_provider": "gcp",
+      "canonical_name": "gke_cluster"
+    }
+  }
+}

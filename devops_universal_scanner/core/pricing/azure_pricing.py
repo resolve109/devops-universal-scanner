@@ -5,7 +5,7 @@ Fetches real-time pricing from Azure Retail Prices API
 
 from typing import Dict, Optional
 from datetime import datetime
-from core.pricing.pricing_cache import PricingCache
+from devops_universal_scanner.core.pricing.pricing_cache import PricingCache
 
 
 class AzurePricingAPI:
@@ -24,7 +24,7 @@ class AzurePricingAPI:
 
     def get_vm_pricing(self, vm_size: str) -> Optional[Dict]:
         """Get Azure VM pricing"""
-        from core.data.cost_estimates import AZURE_COST_ESTIMATES
+        from devops_universal_scanner.core.data.cost_estimates import AZURE_COST_ESTIMATES
 
         vm_prices = AZURE_COST_ESTIMATES.get("azurerm_virtual_machine", {})
         monthly_cost = vm_prices.get(vm_size, 0.0)

@@ -8,21 +8,18 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, List
 
-from core.logger import ScanLogger
-from core.tool_runner import ToolRunner
-
-# Import analyzers from new core structure
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from core.analyzers.finops.cost_analyzer import CostAnalyzer
-from core.analyzers.finops.optimization import OptimizationRecommender
-from core.analyzers.finops.idle_detector import IdleResourceDetector
-from core.analyzers.aiml.gpu_cost_analyzer import GPUCostAnalyzer
-from core.analyzers.security.enhanced_checks import EnhancedSecurityChecker
-from core.cve.tool_cve_scanner import ToolCVEScanner
-from core.cve.ami_cve_scanner import AMICVEScanner
-from core.cve.image_cve_scanner import ImageCVEScanner
-from core.pricing.aws_pricing import AWSPricingAPI
-from core.knowledge import get_policy_loader, get_custom_rules_engine
+from devops_universal_scanner.core.logger import ScanLogger
+from devops_universal_scanner.core.tool_runner import ToolRunner
+from devops_universal_scanner.core.analyzers.finops.cost_analyzer import CostAnalyzer
+from devops_universal_scanner.core.analyzers.finops.optimization import OptimizationRecommender
+from devops_universal_scanner.core.analyzers.finops.idle_detector import IdleResourceDetector
+from devops_universal_scanner.core.analyzers.aiml.gpu_cost_analyzer import GPUCostAnalyzer
+from devops_universal_scanner.core.analyzers.security.enhanced_checks import EnhancedSecurityChecker
+from devops_universal_scanner.core.cve.tool_cve_scanner import ToolCVEScanner
+from devops_universal_scanner.core.cve.ami_cve_scanner import AMICVEScanner
+from devops_universal_scanner.core.cve.image_cve_scanner import ImageCVEScanner
+from devops_universal_scanner.core.pricing.aws_pricing import AWSPricingAPI
+from devops_universal_scanner.core.knowledge import get_policy_loader, get_custom_rules_engine
 
 
 class Scanner:

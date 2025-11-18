@@ -7,7 +7,7 @@ import json
 import re
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field, asdict
-from core.data.cost_estimates import SeverityLevel, AnalysisCategory
+from devops_universal_scanner.core.data.cost_estimates import SeverityLevel, AnalysisCategory
 
 
 @dataclass

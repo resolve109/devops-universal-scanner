@@ -10,7 +10,7 @@ Operations:
 
 from typing import List, Dict, Any
 from dataclasses import dataclass
-from core.data.cost_estimates import SECURITY_ENHANCEMENT_PATTERNS
+from devops_universal_scanner.core.data.cost_estimates import SECURITY_ENHANCEMENT_PATTERNS
 
 
 @dataclass

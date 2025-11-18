@@ -27,10 +27,7 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-from core.scanner import Scanner
+from devops_universal_scanner.core.scanner import Scanner
 
 
 def parse_arguments() -> argparse.Namespace:

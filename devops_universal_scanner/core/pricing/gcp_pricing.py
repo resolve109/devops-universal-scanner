@@ -5,7 +5,7 @@ Fetches real-time pricing from Google Cloud Billing API
 
 from typing import Dict, Optional
 from datetime import datetime
-from core.pricing.pricing_cache import PricingCache
+from devops_universal_scanner.core.pricing.pricing_cache import PricingCache
 
 
 class GCPPricingAPI:
@@ -19,7 +19,7 @@ class GCPPricingAPI:
 
     def get_instance_pricing(self, machine_type: str) -> Optional[Dict]:
         """Get GCP instance pricing"""
-        from core.data.cost_estimates import GCP_COST_ESTIMATES
+        from devops_universal_scanner.core.data.cost_estimates import GCP_COST_ESTIMATES
 
         instance_prices = GCP_COST_ESTIMATES.get("google_compute_instance", {})
         monthly_cost = instance_prices.get(machine_type, 0.0)

@@ -117,21 +117,12 @@ RUN mkdir -p /var/cache/devops-scanner \
 # Copy pure Python application code
 WORKDIR /app
 
-# Copy core engine (now contains everything: analyzers, helpers, data, rules, etc.)
-COPY core/ /app/core/
-
-# Copy CLI and entrypoint
-COPY cli.py /app/cli.py
-COPY entrypoint.py /app/entrypoint.py
-COPY setup.py /app/setup.py
+# Copy the entire package
+COPY devops_universal_scanner/ /app/devops_universal_scanner/
 COPY requirements.txt /app/requirements.txt
 
-# Make Python files executable
-RUN chmod +x /app/cli.py /app/entrypoint.py
-
-# Create symbolic links for convenience
-RUN ln -s /app/cli.py /usr/local/bin/devops-scan && \
-    ln -s /app/entrypoint.py /usr/local/bin/entrypoint
+# Make entrypoint executable
+RUN chmod +x /app/devops_universal_scanner/entrypoint.py
 
 # Add app to Python path
 ENV PYTHONPATH="/app:$PYTHONPATH"
@@ -144,7 +135,7 @@ RUN echo "$(date +%Y-%m-%d)" > /var/cache/devops-scanner/last_update_timestamp &
 WORKDIR /work
 
 # Set Python entrypoint
-ENTRYPOINT ["python3", "/app/entrypoint.py"]
+ENTRYPOINT ["python3", "/app/devops_universal_scanner/entrypoint.py"]
 
 # Show help if no arguments
 CMD []

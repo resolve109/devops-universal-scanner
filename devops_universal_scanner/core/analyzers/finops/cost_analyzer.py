@@ -11,7 +11,7 @@ Operations:
 import re
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass
-from core.data.cost_estimates import (
+from devops_universal_scanner.core.data.cost_estimates import (
     AWS_COST_ESTIMATES,
     AZURE_COST_ESTIMATES,
     GCP_COST_ESTIMATES,

@@ -5,7 +5,7 @@ Result aggregator - collects and combines findings from all tools
 from typing import List, Dict, Any
 from collections import defaultdict
 from analyzers.core.result_parser import Finding
-from core.data.cost_estimates import SeverityLevel, AnalysisCategory
+from devops_universal_scanner.core.data.cost_estimates import SeverityLevel, AnalysisCategory
 
 
 class ResultAggregator:

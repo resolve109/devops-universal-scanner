@@ -9,8 +9,8 @@ Submodules:
 - reporting: Report generation
 """
 
-from core.analyzers.result_parser import ResultParser, Finding
-from core.analyzers.aggregator import ResultAggregator
+from devops_universal_scanner.core.analyzers.result_parser import ResultParser, Finding
+from devops_universal_scanner.core.analyzers.aggregator import ResultAggregator
 
 __all__ = [
     "ResultParser",

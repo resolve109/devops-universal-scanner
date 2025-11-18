@@ -7,7 +7,7 @@ import subprocess
 import shutil
 from typing import Optional, Tuple, Dict, Any
 from pathlib import Path
-from core.logger import ScanLogger
+from devops_universal_scanner.core.logger import ScanLogger
 
 
 class ToolResult:

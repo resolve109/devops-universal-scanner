@@ -7,8 +7,8 @@ Provides fallback when Checkov isn't available
 Enables custom rule creation
 """
 
-from core.knowledge.policy_loader import PolicyKnowledgeLoader, get_policy_loader
-from core.knowledge.custom_rules import CustomRulesEngine, get_custom_rules_engine, CustomRule
+from devops_universal_scanner.core.knowledge.policy_loader import PolicyKnowledgeLoader, get_policy_loader
+from devops_universal_scanner.core.knowledge.custom_rules import CustomRulesEngine, get_custom_rules_engine, CustomRule
 
 __all__ = [
     "PolicyKnowledgeLoader",
