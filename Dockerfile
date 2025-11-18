@@ -4,7 +4,7 @@
 # Builder stage - Compile and prepare binaries
 FROM python:3.13-alpine AS builder
 
-# Install build dependencies
+# Install build dependencies (including Rust for rustworkx)
 RUN apk add --no-cache \
     gcc \
     musl-dev \
@@ -14,7 +14,9 @@ RUN apk add --no-cache \
     wget \
     unzip \
     libffi-dev \
-    openssl-dev
+    openssl-dev \
+    cargo \
+    rust
 
 # Create virtual environment for Python dependencies
 RUN python3 -m venv /opt/venv
@@ -26,10 +28,13 @@ RUN pip install --no-cache-dir --upgrade pip setuptools>=75.0.0 wheel>=0.43.0
 # Copy requirements file
 COPY requirements.txt /tmp/requirements.txt
 
-# Install Python dependencies (excludes dev dependencies)
+# Install Python dependencies
 RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
-    # Remove test/dev packages to save space
-    pip uninstall -y pytest pytest-cov black ruff || true
+    # Verify critical packages
+    echo "=== Verifying package installation ===" && \
+    checkov --version && \
+    cfn-lint --version && \
+    python3 -c "import yaml; print('✅ PyYAML installed')"
 
 # Download and extract scanning tool binaries
 WORKDIR /tmp/binaries
@@ -59,6 +64,13 @@ RUN wget -q https://github.com/Azure/bicep/releases/latest/download/bicep-linux-
     mv bicep-linux-x64 bicep && \
     chmod +x bicep
 
+# Trivy (security scanner for containers and IaC)
+RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
+    wget -q https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
+    tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
+    chmod +x trivy && \
+    rm trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
+
 # kube-score (stub - disabled)
 RUN echo '#!/bin/sh\necho "kube-score functionality temporarily disabled"' > kube-score && \
     chmod +x kube-score
@@ -67,17 +79,27 @@ RUN echo '#!/bin/sh\necho "kube-score functionality temporarily disabled"' > kub
 RUN echo '#!/bin/sh\necho "kubescape functionality temporarily disabled"' > kubescape && \
     chmod +x kubescape
 
+# Verify all binaries are installed and executable
+RUN echo "=== Verifying binary tool installation ===" && \
+    ./terraform version && \
+    ./tflint --version && \
+    ./tfsec --version && \
+    ./bicep --version && \
+    ./trivy --version && \
+    echo "✅ All binary tools verified"
+
 # Runtime stage - Minimal Python 3.13 Alpine
 FROM python:3.13-alpine
 
 LABEL maintainer="DevOps Security Team" \
       version="3.0.0" \
       description="DevOps Universal Scanner - Pure Python 3.13 Engine" \
-      tools="terraform,tflint,tfsec,checkov,cfn-lint,bicep,arm-ttk"
+      tools="terraform,tflint,tfsec,checkov,cfn-lint,bicep,trivy,arm-ttk"
 
 # Install only essential runtime dependencies
 # NOTE: Node.js removed - not needed in pure Python engine
-# NOTE: Trivy removed - saves ~150-200MB
+# NOTE: libgcc added for rustworkx (Rust-compiled binaries)
+# NOTE: Trivy added back for comprehensive security scanning
 RUN apk add --no-cache \
     bash \
     git \
@@ -86,25 +108,26 @@ RUN apk add --no-cache \
     ca-certificates \
     openssl \
     libffi \
+    libgcc \
     && rm -rf /var/cache/apk/*
 
 # Copy Python virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Verify Python tools are installed and accessible
-RUN echo "Verifying Python tool installation..." && \
-    ls -la /opt/venv/bin/ && \
-    python3 -c "import yaml; print('✅ pyyaml installed')" && \
-    which python3 && \
-    which checkov || echo "⚠️  checkov not found" && \
-    which cfn-lint || echo "⚠️  cfn-lint not found"
+# Verify Python tools are installed and accessible in runtime stage
+RUN echo "=== Runtime Python Tool Verification ===" && \
+    python3 -c "import yaml; print('✅ PyYAML available')" && \
+    checkov --version && \
+    cfn-lint --version && \
+    echo "✅ All Python tools verified"
 
 # Copy scanning tool binaries from builder
 COPY --from=builder /tmp/binaries/terraform /usr/local/bin/terraform
 COPY --from=builder /tmp/binaries/tflint /usr/local/bin/tflint
 COPY --from=builder /tmp/binaries/tfsec /usr/local/bin/tfsec
 COPY --from=builder /tmp/binaries/bicep /usr/local/bin/bicep
+COPY --from=builder /tmp/binaries/trivy /usr/local/bin/trivy
 COPY --from=builder /tmp/binaries/kube-score /usr/local/bin/kube-score
 COPY --from=builder /tmp/binaries/kubescape /usr/local/bin/kubescape
 
@@ -153,9 +176,9 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python3 -c "import sys; sys.exit(0)"
 
 # Image optimization notes:
-# - Removed Trivy: ~150-200MB savings
+# - Added Trivy back for comprehensive security scanning
 # - Removed Node.js + npm: ~60MB savings
 # - Removed old .sh scripts: ~1-2MB savings
 # - Pure Python 3.13: Better performance and maintainability
 # - Multi-stage build: Minimal runtime image
-# - Expected final size: ~600-700MB (down from 1.02GB)
+# - Expected final size: ~750-850MB

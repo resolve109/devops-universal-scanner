@@ -61,8 +61,14 @@ class ToolCVEScanner:
             Version string or None if not found
         """
         try:
+            # Special handling for bicep (different version command)
+            if tool_name == "bicep":
+                version_flags = ["--version", "-v"]
+            else:
+                version_flags = ["--version", "-v", "version"]
+
             # Try common version flags
-            for flag in ["--version", "-v", "version"]:
+            for flag in version_flags:
                 try:
                     result = subprocess.run(
                         [tool_name, flag],
@@ -74,7 +80,7 @@ class ToolCVEScanner:
                     output = result.stdout + result.stderr
 
                     # Extract version number
-                    # Common patterns: v1.2.3, 1.2.3, version 1.2.3
+                    # Common patterns: v1.2.3, 1.2.3, version 1.2.3, Bicep CLI version 0.x.x
                     version_pattern = r'v?(\d+\.\d+\.\d+(?:\.\d+)?)'
                     match = re.search(version_pattern, output)
 

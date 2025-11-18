@@ -7,6 +7,38 @@
 
 ---
 
+## 🔥 Critical Bug Fixes (2025-11-18)
+
+### Docker Build & Runtime Issues - RESOLVED ✅
+- **FIXED**: Python dependencies not being installed due to invalid package `azure-mgmt-pricing>=1.0.0b1`
+- **FIXED**: Silent pip install failures causing checkov, cfn-lint, and yaml to be unavailable at runtime
+- **FIXED**: Rust compiler missing for `rustworkx` compilation (checkov dependency on Python 3.13)
+- **FIXED**: Runtime library `libgcc_s.so.1` missing for Rust-compiled binaries
+- **FIXED**: Packaging dependency conflict between checkov and other packages
+- **OPTIMIZED**: Removed heavy optional dependencies (Azure SDK, GCP Billing, bandit, safety, dev tools)
+- **IMPROVED**: Added explicit verification steps in Dockerfile to catch installation failures during build
+- **RESULT**: Build completes successfully, all core scanning tools functional
+
+### Changes to requirements.txt
+- **UPDATED**: Core scanning tools to always use latest versions (`checkov`, `cfn-lint`, `pycfmodel`)
+- **REMOVED**: Version pins to ensure latest security updates and features
+- **FIXED**: Removed `packaging` version constraint - latest checkov handles dependencies correctly
+- Removed `botocore>=1.35.0` - redundant, included with boto3
+- Disabled `azure-mgmt-compute>=30.0.0` - large dependency chain, optional feature
+- Disabled `azure-mgmt-pricing>=1.0.0b1` - package doesn't exist on PyPI
+- Disabled `google-cloud-billing>=1.12.0` - large dependency chain, optional feature
+- Disabled `bandit>=1.7.0` and `safety>=3.0.0` - optional static analysis tools
+- Disabled dev tools (pytest, black, ruff) - should be installed separately for development
+
+### Changes to Dockerfile
+- **FIXED**: Added Rust compiler (`cargo` and `rust`) to builder stage - required for `rustworkx` compilation
+- **FIXED**: Added `libgcc` to runtime stage - required for Rust-compiled binaries (rustworkx)
+- Removed `pip uninstall` step for dev packages (no longer in requirements.txt)
+- Added explicit version checks for `checkov` and `cfn-lint` in builder stage
+- Build will now FAIL FAST if critical packages aren't installed
+
+---
+
 ## 🚀 Major Changes
 
 ### Pure Python Engine

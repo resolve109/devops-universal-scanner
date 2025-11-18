@@ -36,9 +36,9 @@ token.txt
 secret.txt
 api-keys.txt
 
-# # Logs
-# *.log
-# logs/
+# Logs
+*.log
+logs/
 
 # Runtime data
 pids
@@ -73,3 +73,10 @@ Thumbs.db
 push-to-dockerhub.bat
 push-to-dockerhub.sh    __pycache__/
 *.pyc
+
+
+CLAUDE.md
+
+.claude/
+
+docker-build.log

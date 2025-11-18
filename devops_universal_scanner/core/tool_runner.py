@@ -114,12 +114,23 @@ class ToolRunner:
         if result.output:
             self.logger.tool_output(result.output)
 
-        # Log result
+        # Log result based on CFN-Lint exit codes:
+        # 0 = No issues
+        # 2 = Errors found (template syntax/validation errors)
+        # 4 = Warnings found (best practice violations)
+        # 6 = Both errors and warnings
+        # 8 = Informational messages
+        # 10+ = Combination of above
         if result.exit_code == 0:
             self.logger.success("CFN-Lint validation completed successfully - no issues found")
-        elif result.exit_code in [2, 4, 6]:
-            # 2=warnings, 4=errors, 6=both
-            self.logger.warning(f"CFN-Lint found issues (exit code: {result.exit_code})")
+        elif result.exit_code == 4 or result.exit_code == 8:
+            # Warnings/Info only - not a failure
+            self.logger.warning(f"CFN-Lint found warnings/info (exit code: {result.exit_code})")
+            # Override success flag for warnings-only
+            result.success = True
+        elif result.exit_code in [2, 6, 10, 12, 14]:
+            # Errors found (with or without warnings)
+            self.logger.warning(f"CFN-Lint found errors (exit code: {result.exit_code})")
         else:
             self.logger.error(f"CFN-Lint scan failed (exit code: {result.exit_code})")
 

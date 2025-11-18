@@ -230,7 +230,14 @@ class Scanner:
             if template_type == "terraform":
                 resources = self.cost_analyzer._extract_terraform_resources(file_content)
             elif template_type == "cloudformation":
-                resources = self.cost_analyzer._extract_cloudformation_resources(file_content)
+                # Extract parameters for CloudFormation
+                import yaml
+                try:
+                    template = yaml.safe_load(file_content)
+                    parameters = template.get("Parameters", {})
+                except:
+                    parameters = {}
+                resources = self.cost_analyzer._extract_cloudformation_resources(file_content, parameters)
             else:
                 resources = []
 
@@ -296,7 +303,19 @@ class Scanner:
         self.logger.message("TOOL EXECUTION RESULTS:")
 
         for tool_name, result in tool_summary["results"].items():
-            status = "✅ PASSED" if result["success"] else f"⚠️  ISSUES (exit {result['exit_code']})"
+            if result["success"]:
+                status = "✅ PASSED"
+            elif result["exit_code"] == 1:
+                # Exit code 1 typically means security/compliance issues found (not tool failure)
+                status = "⚠️  SECURITY ISSUES FOUND"
+            elif result["exit_code"] in [2, 6, 10, 12, 14]:
+                # CFN-Lint error codes
+                status = "⚠️  VALIDATION ERRORS"
+            elif result["exit_code"] == 4:
+                # CFN-Lint warnings (should be success but good to note)
+                status = "✅ PASSED (warnings found)"
+            else:
+                status = f"❌ FAILED (exit {result['exit_code']})"
             self.logger.message(f"- {tool_name}: {status}")
 
         self.logger.message("=" * 60)

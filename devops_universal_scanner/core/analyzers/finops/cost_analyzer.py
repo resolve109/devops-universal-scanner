@@ -73,7 +73,15 @@ class CostAnalyzer:
         Returns:
             List of cost breakdowns
         """
-        resources = self._extract_cloudformation_resources(file_content)
+        # Parse template to get parameters
+        import yaml
+        try:
+            template = yaml.safe_load(file_content)
+            parameters = template.get("Parameters", {})
+        except:
+            parameters = {}
+
+        resources = self._extract_cloudformation_resources(file_content, parameters)
         return self._calculate_costs(resources, "cloudformation")
 
     def _extract_terraform_resources(self, content: str) -> List[Dict[str, Any]]:
@@ -100,10 +108,13 @@ class CostAnalyzer:
 
         return resources
 
-    def _extract_cloudformation_resources(self, content: str) -> List[Dict[str, Any]]:
+    def _extract_cloudformation_resources(self, content: str, parameters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """Extract resources from CloudFormation template"""
         import yaml
         import json
+
+        if parameters is None:
+            parameters = {}
 
         resources = []
 
@@ -125,8 +136,8 @@ class CostAnalyzer:
                 # AWS::EC2::Instance -> aws_instance
                 internal_type = self._convert_cf_type_to_internal(resource_type)
 
-                # Extract instance type
-                instance_type = self._extract_cf_instance_type(properties, resource_type)
+                # Extract instance type (pass parameters for Ref resolution)
+                instance_type = self._extract_cf_instance_type(properties, resource_type, parameters)
 
                 resources.append({
                     "type": internal_type,
@@ -137,8 +148,11 @@ class CostAnalyzer:
                 })
 
         except Exception as e:
-            # If parsing fails, return empty list
-            pass
+            # If parsing fails, return empty list but log the error
+            import sys
+            print(f"DEBUG: CloudFormation parsing failed: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
 
         return resources
 
@@ -183,8 +197,11 @@ class CostAnalyzer:
 
         return None
 
-    def _extract_cf_instance_type(self, properties: Dict[str, Any], resource_type: str) -> Optional[str]:
+    def _extract_cf_instance_type(self, properties: Dict[str, Any], resource_type: str, parameters: Dict[str, Any] = None) -> Optional[str]:
         """Extract instance type from CloudFormation properties"""
+
+        if parameters is None:
+            parameters = {}
 
         # Check common property names
         instance_type_keys = ["InstanceType", "DBInstanceClass", "NodeType", "CacheNodeType"]
@@ -195,7 +212,15 @@ class CostAnalyzer:
                 # Handle Ref and other CloudFormation functions
                 if isinstance(value, dict):
                     if "Ref" in value:
-                        continue  # Skip references for now
+                        # Resolve parameter reference
+                        param_name = value["Ref"]
+                        if param_name in parameters:
+                            param_config = parameters[param_name]
+                            # Get default value if available
+                            if "Default" in param_config:
+                                return str(param_config["Default"])
+                        # Skip if we can't resolve the reference
+                        continue
                 else:
                     return str(value)
 
@@ -253,8 +278,19 @@ class CostAnalyzer:
         if cost_data is None:
             return 0.0
 
-        if isinstance(cost_data, dict) and instance_type:
-            return cost_data.get(instance_type, 0.0)
+        if isinstance(cost_data, dict):
+            if instance_type:
+                return cost_data.get(instance_type, 0.0)
+            else:
+                # For resources like S3 where we have cost tiers but no specific instance type
+                # Use the "standard" tier or first available tier
+                if "standard" in cost_data:
+                    return cost_data["standard"] * 100  # Assume 100GB for S3
+                elif cost_data:
+                    # Return first value * assumed usage
+                    first_cost = next(iter(cost_data.values()))
+                    return first_cost * 100  # Assume 100GB default usage
+                return 0.0
         elif isinstance(cost_data, (int, float)):
             return float(cost_data)
 
