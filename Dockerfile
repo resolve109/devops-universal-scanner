@@ -27,7 +27,11 @@ RUN pip install --no-cache-dir --upgrade pip setuptools>=75.0.0 wheel>=0.43.0
 COPY requirements.txt /tmp/requirements.txt
 
 # Install Python dependencies (excludes dev dependencies)
-RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
+RUN set -e && \
+    echo "Installing Python packages..." && \
+    pip install --no-cache-dir -r /tmp/requirements.txt --verbose && \
+    echo "Verifying key packages installed..." && \
+    pip show checkov cfn-lint pyyaml || exit 1 && \
     # Remove test/dev packages to save space
     pip uninstall -y pytest pytest-cov black ruff || true
 
