@@ -92,6 +92,14 @@ RUN apk add --no-cache \
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
+# Verify Python tools are installed and accessible
+RUN echo "Verifying Python tool installation..." && \
+    ls -la /opt/venv/bin/ && \
+    python3 -c "import yaml; print('✅ pyyaml installed')" && \
+    which python3 && \
+    which checkov || echo "⚠️  checkov not found" && \
+    which cfn-lint || echo "⚠️  cfn-lint not found"
+
 # Copy scanning tool binaries from builder
 COPY --from=builder /tmp/binaries/terraform /usr/local/bin/terraform
 COPY --from=builder /tmp/binaries/tflint /usr/local/bin/tflint
@@ -125,7 +133,7 @@ COPY requirements.txt /app/requirements.txt
 RUN chmod +x /app/devops_universal_scanner/entrypoint.py
 
 # Add app to Python path
-ENV PYTHONPATH="/app:$PYTHONPATH"
+ENV PYTHONPATH="/app"
 
 # Mark installation complete
 RUN echo "$(date +%Y-%m-%d)" > /var/cache/devops-scanner/last_update_timestamp && \
