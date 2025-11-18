@@ -1,0 +1,52 @@
+=================================================================
+     DEVOPS UNIVERSAL SCANNER - SECURITY SCAN REPORT
+=================================================================
+
+
+============================================================
+[2025-11-18 23:02:25] 🚀 Cloudformation Scanner v3.0 - Pure Python Engine
+============================================================
+[2025-11-18 23:02:25] 📁 Target: devops_universal_scanner/test-files/cloudformation/ec2-instance.yaml
+[2025-11-18 23:02:25] 📍 Working directory: /work
+[2025-11-18 23:02:25] 🕐 Scan started: 2025-11-18 23:02:25.919256
+[2025-11-18 23:02:25] 🏷️  Environment: development
+[2025-11-18 23:02:25] ✅ SUCCESS: Target 'devops_universal_scanner/test-files/cloudformation/ec2-instance.yaml' found and accessible
+[2025-11-18 23:02:25] 📄 Scanning CloudFormation template: devops_universal_scanner/test-files/cloudformation/ec2-instance.yaml
+
+============================================================
+[2025-11-18 23:02:25] 🔧 Running CFN-Lint - CloudFormation Linter
+============================================================
+[2025-11-18 23:02:25] Running CFN-Lint validation on template...
+[2025-11-18 23:02:25] ❌ ERROR: cfn-lint not found in PATH
+Not found
+[2025-11-18 23:02:25] ❌ ERROR: CFN-Lint scan failed (exit code: -1)
+
+============================================================
+[2025-11-18 23:02:25] 🛡️  Running Checkov - Infrastructure Security Scanner
+============================================================
+[2025-11-18 23:02:25] Running Checkov security scan with framework: cloudformation...
+[2025-11-18 23:02:25] ❌ ERROR: checkov not found in PATH
+Not found
+[2025-11-18 23:02:25] ❌ ERROR: Checkov scan failed (exit code: -1)
+[2025-11-18 23:02:25] ⚠️  WARNING: AWS CLI not available - skipping AWS validation
+
+============================================================
+[2025-11-18 23:02:25] 🎯 Running Native Intelligence Analysis
+============================================================
+[2025-11-18 23:02:25] Running enhanced FinOps, Security, and AI/ML analysis...
+[2025-11-18 23:02:25] ❌ ERROR: Native intelligence analysis failed: No module named 'yaml'
+
+============================================================
+[2025-11-18 23:02:25] 📊 Scan Summary and Results
+============================================================
+[2025-11-18 23:02:25] Target: devops_universal_scanner/test-files/cloudformation/ec2-instance.yaml
+[2025-11-18 23:02:25] 🕐 Scan completed: 2025-11-18 23:02:25.933268
+[2025-11-18 23:02:25] ============================================================
+[2025-11-18 23:02:25] TOOL EXECUTION RESULTS:
+[2025-11-18 23:02:25] - cfn-lint: ⚠️  ISSUES (exit -1)
+[2025-11-18 23:02:25] - checkov: ⚠️  ISSUES (exit -1)
+[2025-11-18 23:02:25] ============================================================
+[2025-11-18 23:02:25] ⚠️  WARNING: Overall scan result: ISSUES FOUND - Review the detailed output above
+[2025-11-18 23:02:25] Tools with issues: 2 out of 2
+[2025-11-18 23:02:25] 📄 Complete scan log saved to: cloudformation-scan-report-20251118-230225.log
+[2025-11-18 23:02:25] 🎯 All tool outputs captured with timestamps and exit codes
