@@ -1,0 +1,44 @@
+# DevOps Universal Scanner - Python Dependencies
+# Pure Python 3.13 Engine
+
+# Core scanning tools
+checkov>=3.2.0                # Multi-cloud security scanner
+cfn-lint>=1.0.0               # CloudFormation linter
+pycfmodel>=0.22.0             # CloudFormation model parsing
+
+# Cloud provider SDKs (for live pricing APIs)
+boto3>=1.35.0                 # AWS SDK
+botocore>=1.35.0              # AWS SDK core
+azure-mgmt-compute>=30.0.0    # Azure Compute management
+azure-mgmt-pricing>=1.0.0b1   # Azure Pricing
+google-cloud-billing>=1.12.0  # GCP Billing API
+
+# IaC parsing and analysis
+pyyaml>=6.0.1                 # YAML parsing
+python-hcl2>=4.3.0            # Terraform HCL2 parsing
+jinja2>=3.1.0                 # Template rendering
+
+# Security and CVE scanning
+packaging>=24.0               # Version parsing for CVE checks
+requests>=2.32.0              # HTTP requests for CVE APIs
+
+# Data processing
+tabulate>=0.9.0               # Table formatting for reports
+jsonschema>=4.0.0             # JSON validation
+
+# System utilities
+psutil>=6.0.0                 # System and process utilities
+
+# Static analysis
+bandit>=1.7.0                 # Security issue detection in Python code
+safety>=3.0.0                 # Known security vulnerability scanning
+
+# Development tools (optional)
+pytest>=8.0.0                 # Testing framework
+pytest-cov>=4.0.0             # Coverage reporting
+black>=24.0.0                 # Code formatting
+ruff>=0.3.0                   # Fast linting
+
+# Security updates for known CVEs
+setuptools>=75.0.0            # CVE-2025-47273 fix
+wheel>=0.43.0                 # Build dependency
