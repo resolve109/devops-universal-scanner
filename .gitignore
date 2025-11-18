@@ -71,5 +71,41 @@ Thumbs.db
 
 # #docker-push
 push-to-dockerhub.bat
-push-to-dockerhub.sh    __pycache__/
-*.pyc
+push-to-dockerhub.sh
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Scan reports and logs (generated at runtime)
+*-scan-report-*.log
+*.scan.log
+cloudformation-scan-report-*.log
+terraform-scan-report-*.log
+docker-scan-report-*.log
+kubernetes-scan-report-*.log
+arm-scan-report-*.log
+bicep-scan-report-*.log
+gcp-scan-report-*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.sublime-*
+.vs/
+
+# Testing and development
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.dmypy.json
+dmypy.json
