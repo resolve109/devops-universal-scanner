@@ -11,7 +11,7 @@ Operations:
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
 from devops_universal_scanner.core.data.cost_estimates import is_gpu_instance, AWS_COST_ESTIMATES
-from analyzers.finops.cost_analyzer import CostBreakdown
+from devops_universal_scanner.core.analyzers.finops.cost_analyzer import CostBreakdown
 
 
 @dataclass

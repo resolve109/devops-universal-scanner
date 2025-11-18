@@ -10,7 +10,7 @@ Operations:
 
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass
-from analyzers.finops.cost_analyzer import CostBreakdown
+from devops_universal_scanner.core.analyzers.finops.cost_analyzer import CostBreakdown
 
 
 @dataclass
