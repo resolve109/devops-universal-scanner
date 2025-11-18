@@ -105,8 +105,8 @@ RUN mkdir -p /opt/arm-ttk && \
     git clone --depth 1 --single-branch https://github.com/Azure/arm-ttk.git /opt/arm-ttk && \
     # Remove unnecessary files to save space
     rm -rf /opt/arm-ttk/.git /opt/arm-ttk/docs /opt/arm-ttk/unit-tests /opt/arm-ttk/.github && \
-    ln -s /opt/arm-ttk/arm-ttk/arm-ttk.sh /usr/local/bin/arm-ttk && \
-    chmod +x /opt/arm-ttk/arm-ttk/arm-ttk.sh
+    ln -s /opt/arm-ttk/arm-ttk/Test-AzTemplate.sh /usr/local/bin/arm-ttk && \
+    chmod +x /opt/arm-ttk/arm-ttk/Test-AzTemplate.sh
 
 # Create directories for scanner operations
 RUN mkdir -p /var/cache/devops-scanner \
