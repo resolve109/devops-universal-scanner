@@ -36,6 +36,9 @@ RUN pip install --no-cache-dir -r /tmp/requirements.txt && \
     cfn-lint --version && \
     python3 -c "import yaml; print('✅ PyYAML installed')"
 
+# Install Azure CLI in the builder stage (requires build tools)
+RUN pip install --no-cache-dir azure-cli==2.55.0
+
 # Download and extract scanning tool binaries
 WORKDIR /tmp/binaries
 
@@ -103,7 +106,8 @@ LABEL maintainer="DevOps Security Team" \
 # NOTE: Node.js removed - not needed in pure Python engine
 # NOTE: libgcc added for rustworkx (Rust-compiled binaries)
 # NOTE: Trivy added back for comprehensive security scanning
-# NOTE: AWS CLI and Azure CLI added for AMI/image lookups
+# NOTE: AWS CLI added for AMI/image lookups
+# NOTE: Azure CLI installed in builder stage and copied via venv
 RUN apk add --no-cache \
     bash \
     git \
@@ -113,31 +117,25 @@ RUN apk add --no-cache \
     openssl \
     libffi \
     libgcc \
-    python3 \
-    py3-pip \
     groff \
     less \
+    aws-cli \
     && rm -rf /var/cache/apk/*
-
-# Install AWS CLI v2 (official method for Alpine)
-RUN apk add --no-cache aws-cli
-
-# Install Azure CLI (via pip since Alpine doesn't have official package)
-RUN pip3 install --no-cache-dir azure-cli==2.55.0 --break-system-packages
-
-# Verify CLIs are installed
-RUN aws --version && az --version
 
 # Copy Python virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv
 ENV PATH="/opt/venv/bin:$PATH"
 
-# Verify Python tools are installed and accessible in runtime stage
+# Verify Python tools and CLIs are installed and accessible in runtime stage
 RUN echo "=== Runtime Python Tool Verification ===" && \
     python3 -c "import yaml; print('✅ PyYAML available')" && \
     checkov --version && \
     cfn-lint --version && \
-    echo "✅ All Python tools verified"
+    echo "✅ All Python tools verified" && \
+    echo "=== CLI Tool Verification ===" && \
+    aws --version && \
+    az --version && \
+    echo "✅ AWS CLI and Azure CLI verified"
 
 # Copy scanning tool binaries from builder
 COPY --from=builder /tmp/binaries/terraform /usr/local/bin/terraform
