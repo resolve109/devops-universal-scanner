@@ -145,7 +145,7 @@ class ToolCVEScanner:
                 tool_name=tool_name,
                 current_version=version,
                 has_cve=False,
-                description=f"{tool_name} {version} - No known CVEs ✅"
+                description=f"{tool_name} {version} - No known CVEs"
             )
 
     def scan_all_tools(self) -> List[ToolCVE]:
@@ -181,7 +181,7 @@ class ToolCVEScanner:
         lines = []
         lines.append("")
         lines.append("=" * 80)
-        lines.append("🔐 TOOL CVE SECURITY SCAN")
+        lines.append("TOOL CVE SECURITY SCAN")
         lines.append(f"   Scan Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
         lines.append("=" * 80)
         lines.append("")
@@ -192,38 +192,38 @@ class ToolCVEScanner:
         tools_not_found = [r for r in self.scan_results if r.current_version == "unknown"]
 
         if tools_with_cves:
-            lines.append("🔴 TOOLS WITH KNOWN CVEs:")
+            lines.append("TOOLS WITH KNOWN CVEs:")
             lines.append("")
             for tool in tools_with_cves:
-                lines.append(f"   ❌ {tool.tool_name} {tool.current_version}")
-                lines.append(f"      CVE: {tool.cve_id}")
-                lines.append(f"      Severity: {tool.severity}")
-                lines.append(f"      {tool.description}")
+                lines.append(f"   [FAIL] {tool.tool_name} {tool.current_version}")
+                lines.append(f"          CVE: {tool.cve_id}")
+                lines.append(f"          Severity: {tool.severity}")
+                lines.append(f"          {tool.description}")
                 if tool.fixed_version:
-                    lines.append(f"      💡 Update to: {tool.fixed_version}")
+                    lines.append(f"          Update to: {tool.fixed_version}")
                 lines.append("")
 
         if tools_clean:
-            lines.append("✅ TOOLS WITH NO KNOWN CVEs:")
+            lines.append("TOOLS WITH NO KNOWN CVEs:")
             lines.append("")
             for tool in tools_clean:
-                lines.append(f"   ✅ {tool.tool_name} {tool.current_version} - Secure")
+                lines.append(f"   [PASS] {tool.tool_name} {tool.current_version} - Secure")
             lines.append("")
 
         if tools_not_found:
-            lines.append("⚠️  TOOLS NOT FOUND:")
+            lines.append("TOOLS NOT FOUND:")
             lines.append("")
             for tool in tools_not_found:
-                lines.append(f"   ⚠️  {tool.tool_name} - Not installed or not in PATH")
+                lines.append(f"   [WARN] {tool.tool_name} - Not installed or not in PATH")
             lines.append("")
 
         # Summary
         lines.append("=" * 80)
         lines.append("SUMMARY:")
         lines.append(f"   Total Tools Scanned: {len(self.scan_results)}")
-        lines.append(f"   🔴 Tools with CVEs: {len(tools_with_cves)}")
-        lines.append(f"   ✅ Clean Tools: {len(tools_clean)}")
-        lines.append(f"   ⚠️  Not Found: {len(tools_not_found)}")
+        lines.append(f"   Tools with CVEs: {len(tools_with_cves)}")
+        lines.append(f"   Clean Tools: {len(tools_clean)}")
+        lines.append(f"   Not Found: {len(tools_not_found)}")
         lines.append("=" * 80)
 
         return "\n".join(lines)

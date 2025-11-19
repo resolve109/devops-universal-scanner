@@ -109,7 +109,7 @@ class EnhancedSecurityChecker:
         lines = []
         lines.append("")
         lines.append("=" * 80)
-        lines.append("🔒 ENHANCED SECURITY INSIGHTS")
+        lines.append("[SECURITY] ENHANCED SECURITY INSIGHTS")
         lines.append("=" * 80)
         lines.append("")
 
@@ -118,23 +118,23 @@ class EnhancedSecurityChecker:
         medium_insights = [i for i in self.insights if i.severity == "medium"]
 
         if high_insights:
-            lines.append("🔴 HIGH SEVERITY FINDINGS:")
+            lines.append("[HIGH] HIGH SEVERITY FINDINGS:")
             lines.append("")
             for i, insight in enumerate(high_insights, 1):
                 lines.append(f"{i}. {insight.resource_name}")
                 lines.append(f"   Category: {insight.category}")
                 lines.append(f"   Finding: {insight.finding}")
-                lines.append(f"   💡 Recommendation: {insight.recommendation}")
+                lines.append(f"   [RECOMMENDATION] {insight.recommendation}")
                 lines.append("")
 
         if medium_insights:
-            lines.append("🟡 MEDIUM SEVERITY FINDINGS:")
+            lines.append("[MEDIUM] MEDIUM SEVERITY FINDINGS:")
             lines.append("")
             for i, insight in enumerate(medium_insights, 1):
                 lines.append(f"{i}. {insight.resource_name}")
                 lines.append(f"   Category: {insight.category}")
                 lines.append(f"   Finding: {insight.finding}")
-                lines.append(f"   💡 Recommendation: {insight.recommendation}")
+                lines.append(f"   [RECOMMENDATION] {insight.recommendation}")
                 lines.append("")
 
         lines.append("=" * 80)

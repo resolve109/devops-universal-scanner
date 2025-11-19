@@ -164,7 +164,7 @@ class OptimizationRecommender:
             current_monthly_cost=breakdown.monthly_cost,
             potential_monthly_savings=potential_savings,
             savings_percentage=reserved_savings_ratio * 100,
-            recommendation=f"💰 Switch to Reserved Instances for '{breakdown.resource_name}' (production workload)",
+            recommendation=f"Switch to Reserved Instances for '{breakdown.resource_name}' (production workload)",
             implementation_steps=[
                 f"Current Cost (On-Demand): ${breakdown.monthly_cost:.2f}/month",
                 f"",
@@ -281,19 +281,19 @@ class OptimizationRecommender:
     def generate_optimization_report(self) -> str:
         """Generate a formatted optimization report"""
         if not self.recommendations:
-            return "\n💡 No optimization recommendations at this time.\n"
+            return "\n[INFO] No optimization recommendations at this time.\n"
 
         lines = []
         lines.append("")
         lines.append("=" * 80)
-        lines.append("💡 FINOPS OPTIMIZATION RECOMMENDATIONS")
+        lines.append("[OPTIMIZATION] FINOPS OPTIMIZATION RECOMMENDATIONS")
         lines.append("=" * 80)
         lines.append("")
 
         # Calculate total potential savings
         total_savings = sum(rec.potential_monthly_savings for rec in self.recommendations)
 
-        lines.append(f"📊 TOTAL POTENTIAL SAVINGS:")
+        lines.append("[TOTAL] TOTAL POTENTIAL SAVINGS:")
         lines.append(f"   Monthly:  ${total_savings:,.2f}")
         lines.append(f"   Annual:   ${total_savings * 12:,.2f}")
         lines.append("")
@@ -310,15 +310,15 @@ class OptimizationRecommender:
 
         for i, rec in enumerate(sorted_recs, 1):
             severity_indicator = {
-                "high": "🔴",
-                "medium": "🟡",
-                "low": "🟢",
-            }.get(rec.severity, "⚪")
+                "high": "[HIGH]",
+                "medium": "[MEDIUM]",
+                "low": "[LOW]",
+            }.get(rec.severity, "[INFO]")
 
             lines.append(f"{i}. {severity_indicator} {rec.recommendation}")
             lines.append(f"   Current Cost: ${rec.current_monthly_cost:.2f}/month")
-            lines.append(f"   💰 Potential Savings: ${rec.potential_monthly_savings:.2f}/month ({rec.savings_percentage:.0f}%)")
-            lines.append(f"   📅 Annual Savings: ${rec.potential_monthly_savings * 12:.2f}/year")
+            lines.append(f"   [SAVINGS] Potential Savings: ${rec.potential_monthly_savings:.2f}/month ({rec.savings_percentage:.0f}%)")
+            lines.append(f"   [ANNUAL] Annual Savings: ${rec.potential_monthly_savings * 12:.2f}/year")
             lines.append("")
             lines.append("   Implementation:")
             for step in rec.implementation_steps:

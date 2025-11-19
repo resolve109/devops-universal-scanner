@@ -7,6 +7,52 @@
 
 ---
 
+## 🔮 Planned Enhancements (v3.1.0)
+
+### AMI Alternative Suggestions (Priority: HIGH)
+**Status**: Planning Phase
+**Tracking**: See `docs/ENHANCEMENT_AMI_ALTERNATIVES.md`
+
+**Problem**: When AMI CVEs are detected, scanner provides generic recommendations like "Use latest Amazon Linux 2023 AMI" without specific AMI IDs.
+
+**Solution**: Provide actionable AMI alternatives with specific IDs, verified CVE-free.
+
+**Features**:
+- AWS SSM Parameter Store integration for official AMI IDs
+- Fallback to curated database when AWS API unavailable
+- Region-specific AMI recommendations
+- Multi-architecture support (x86_64, arm64)
+- CVE verification for all suggestions
+- Distribution detection from AMI names/IDs
+
+**Example Output Enhancement**:
+```
+Current:
+  Recommendation: Use latest Amazon Linux 2023 AMI
+
+Enhanced:
+  Suggested Alternatives:
+    - ami-0abc123def456789a (Amazon Linux 2023.3.20250115, us-east-1)
+      Last Updated: 2025-01-15, Status: CVE-free (verified)
+    - ami-0xyz987uvw654321b (Ubuntu 24.04 LTS, us-east-1)
+      Last Updated: 2025-01-14, Status: CVE-free (verified)
+```
+
+**Implementation**:
+- ✅ Created skeleton: `core/cve/ami_alternative_finder.py`
+- ✅ Created fallback database: `core/data/ami_alternatives.json`
+- ✅ Enhanced AMICVE dataclass with AMIAlternative support
+- ✅ Added comprehensive implementation guide
+- ⏳ Pending: AWS SSM integration
+- ⏳ Pending: CVE verification logic
+- ⏳ Pending: Integration testing
+
+**Estimated Effort**: 8-12 hours
+**Risk**: Low (additive changes only)
+**Value**: High (makes recommendations actionable)
+
+---
+
 ## 🔥 Critical Bug Fixes (2025-11-18)
 
 ### Docker Build & Runtime Issues - RESOLVED ✅

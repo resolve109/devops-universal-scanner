@@ -33,6 +33,8 @@ class CostBreakdown:
     cost_category: str  # 'low', 'medium', 'high', 'critical'
     is_gpu: bool = False
     notes: str = ""
+    cost_components: Dict[str, Any] = None  # Detailed cost breakdown (e.g., S3 storage, requests, transfer)
+    is_free_service: bool = False  # True for free AWS services (Security Groups, IAM, etc.)
 
 
 class CostAnalyzer:
@@ -215,9 +217,33 @@ class CostAnalyzer:
             "AWS::Lambda::Function": "aws_lambda_function",
             "AWS::EKS::Cluster": "aws_eks_cluster",
             "AWS::SageMaker::NotebookInstance": "aws_sagemaker_notebook_instance",
+            # Free services
+            "AWS::EC2::SecurityGroup": "aws_security_group",
+            "AWS::IAM::Role": "aws_iam_role",
+            "AWS::IAM::Policy": "aws_iam_policy",
+            "AWS::IAM::User": "aws_iam_user",
+            "AWS::IAM::Group": "aws_iam_group",
         }
 
         return mapping.get(cf_type, cf_type.lower())
+
+    def _is_free_aws_service(self, cf_type: str) -> bool:
+        """Check if CloudFormation resource type is a free AWS service"""
+        free_services = [
+            "AWS::EC2::SecurityGroup",
+            "AWS::IAM::Role",
+            "AWS::IAM::Policy",
+            "AWS::IAM::User",
+            "AWS::IAM::Group",
+            "AWS::IAM::InstanceProfile",
+            "AWS::EC2::RouteTable",
+            "AWS::EC2::Route",
+            "AWS::EC2::SubnetRouteTableAssociation",
+            "AWS::EC2::VPCGatewayAttachment",
+            "AWS::CloudWatch::Alarm",  # Free within limits
+            "AWS::Logs::LogGroup",  # Storage costs apply, but resource itself is free
+        ]
+        return cf_type in free_services
 
     def _extract_instance_type(self, resource_body: str, resource_type: str, format_type: str) -> Optional[str]:
         """Extract instance type from resource configuration"""
@@ -275,21 +301,30 @@ class CostAnalyzer:
             resource_type = resource.get("type", "")
             resource_name = resource.get("name", "")
             instance_type = resource.get("instance_type")
+            cf_type = resource.get("cf_type", "")
 
-            # Get cost estimate
-            monthly_cost = self._get_resource_cost(resource_type, instance_type)
+            # Check if this is a free AWS service
+            is_free = False
+            if cf_type:
+                is_free = self._is_free_aws_service(cf_type)
 
-            if monthly_cost > 0:
+            # Get cost estimate and detailed breakdown
+            monthly_cost, cost_components = self._get_resource_cost_detailed(resource_type, instance_type)
+
+            # Include free services in the breakdown
+            if monthly_cost > 0 or is_free:
                 # Calculate different time periods
                 weekly_cost = monthly_cost / 4.33  # Average weeks per month
                 daily_cost = monthly_cost / 30
                 hourly_cost = monthly_cost / 730  # Average hours per month
 
                 # Determine cost category
-                cost_category = self._determine_cost_category(monthly_cost)
+                cost_category = self._determine_cost_category(monthly_cost) if not is_free else "free"
 
                 # Check if GPU instance
                 is_gpu = is_gpu_instance(instance_type or "")
+
+                notes = "No charge (AWS managed service)" if is_free else "Approximate cost in US East region"
 
                 breakdown = CostBreakdown(
                     resource_name=resource_name,
@@ -301,7 +336,9 @@ class CostAnalyzer:
                     hourly_cost=hourly_cost,
                     cost_category=cost_category,
                     is_gpu=is_gpu,
-                    notes=f"Approximate cost in US East region"
+                    notes=notes,
+                    cost_components=cost_components,
+                    is_free_service=is_free
                 )
 
                 cost_breakdowns.append(breakdown)
@@ -312,30 +349,81 @@ class CostAnalyzer:
         return cost_breakdowns
 
     def _get_resource_cost(self, resource_type: str, instance_type: Optional[str]) -> float:
-        """Get monthly cost for a resource"""
+        """Get monthly cost for a resource (simple version - use _get_resource_cost_detailed for details)"""
+        cost, _ = self._get_resource_cost_detailed(resource_type, instance_type)
+        return cost
 
+    def _get_resource_cost_detailed(self, resource_type: str, instance_type: Optional[str]) -> Tuple[float, Optional[Dict[str, Any]]]:
+        """
+        Get monthly cost for a resource with detailed breakdown
+
+        Returns:
+            Tuple of (total_monthly_cost, cost_components_dict)
+        """
         cost_data = AWS_COST_ESTIMATES.get(resource_type)
 
         if cost_data is None:
-            return 0.0
+            return 0.0, None
 
+        # Handle S3 buckets with detailed breakdown
+        if resource_type == "aws_s3_bucket":
+            assumed_storage_gb = 100  # Default assumption
+            storage_rate = cost_data.get("standard", 0.023)  # $0.023 per GB-month
+            storage_cost = storage_rate * assumed_storage_gb
+
+            components = {
+                "storage": {
+                    "description": "Standard storage",
+                    "rate_per_gb": storage_rate,
+                    "estimated_gb": assumed_storage_gb,
+                    "monthly_cost": storage_cost
+                },
+                "requests": {
+                    "description": "PUT, COPY, POST, LIST requests",
+                    "monthly_cost": 0.00,
+                    "note": "Included in estimate (minimal usage assumed)"
+                },
+                "data_transfer": {
+                    "description": "Data transfer out",
+                    "monthly_cost": 0.00,
+                    "note": "First 100 GB/month free"
+                }
+            }
+            return storage_cost, components
+
+        # Handle instance-based resources
         if isinstance(cost_data, dict):
             if instance_type:
-                return cost_data.get(instance_type, 0.0)
+                cost = cost_data.get(instance_type, 0.0)
+                components = {
+                    "compute": {
+                        "description": f"{instance_type} instance",
+                        "monthly_cost": cost
+                    }
+                }
+                return cost, components
             else:
-                # For resources like S3 where we have cost tiers but no specific instance type
-                # Use the "standard" tier or first available tier
+                # For resources with tiers but no specific instance type
                 if "standard" in cost_data:
-                    return cost_data["standard"] * 100  # Assume 100GB for S3
+                    cost = cost_data["standard"] * 100  # Assume 100GB
+                    return cost, None
                 elif cost_data:
                     # Return first value * assumed usage
                     first_cost = next(iter(cost_data.values()))
-                    return first_cost * 100  # Assume 100GB default usage
-                return 0.0
+                    cost = first_cost * 100
+                    return cost, None
+                return 0.0, None
         elif isinstance(cost_data, (int, float)):
-            return float(cost_data)
+            cost = float(cost_data)
+            components = {
+                "service": {
+                    "description": f"{resource_type} service",
+                    "monthly_cost": cost
+                }
+            }
+            return cost, components
 
-        return 0.0
+        return 0.0, None
 
     def _determine_cost_category(self, monthly_cost: float) -> str:
         """Determine cost warning category"""
@@ -357,12 +445,12 @@ class CostAnalyzer:
 
         lines = []
         lines.append("=" * 80)
-        lines.append("💰 COST BREAKDOWN")
+        lines.append("[COST] COST BREAKDOWN")
         lines.append("=" * 80)
         lines.append("")
 
         # Total costs
-        lines.append(f"📊 TOTAL ESTIMATED COSTS:")
+        lines.append("[TOTAL] ESTIMATED COSTS:")
         lines.append(f"   Monthly:  ${self.total_monthly_cost:,.2f}")
         lines.append(f"   Weekly:   ${self.total_monthly_cost / 4.33:,.2f}")
         lines.append(f"   Daily:    ${self.total_monthly_cost / 30:,.2f}")
@@ -370,11 +458,14 @@ class CostAnalyzer:
         lines.append("")
 
         # Resource breakdown
-        lines.append("📋 RESOURCE COST BREAKDOWN:")
+        lines.append("[BREAKDOWN] RESOURCE COST BREAKDOWN:")
         lines.append("")
 
-        # Sort by monthly cost (highest first)
-        sorted_costs = sorted(self.cost_breakdowns, key=lambda x: x.monthly_cost, reverse=True)
+        # Sort by monthly cost (highest first), but keep free services at the end
+        sorted_costs = sorted(
+            self.cost_breakdowns,
+            key=lambda x: (x.is_free_service, -x.monthly_cost)
+        )
 
         for i, breakdown in enumerate(sorted_costs, 1):
             # Cost category indicator
@@ -384,17 +475,36 @@ class CostAnalyzer:
             lines.append(f"   Type: {breakdown.resource_type}")
             if breakdown.instance_type:
                 lines.append(f"   Instance: {breakdown.instance_type}")
+
+            # Show detailed cost breakdown for resources with components (e.g., S3)
+            if breakdown.cost_components:
+                lines.append("   Cost Components:")
+                for comp_name, comp_data in breakdown.cost_components.items():
+                    if "rate_per_gb" in comp_data:
+                        # S3 storage component
+                        lines.append(f"     - {comp_data['description']}: ${comp_data['rate_per_gb']:.3f}/GB × {comp_data['estimated_gb']}GB = ${comp_data['monthly_cost']:.2f}/month")
+                    elif "note" in comp_data:
+                        # Component with note (e.g., free tier)
+                        lines.append(f"     - {comp_data['description']}: ${comp_data['monthly_cost']:.2f}/month ({comp_data['note']})")
+                    else:
+                        # Simple component
+                        lines.append(f"     - {comp_data['description']}: ${comp_data['monthly_cost']:.2f}/month")
+
             if breakdown.is_gpu:
-                lines.append(f"   ⚡ GPU-ENABLED INSTANCE - High compute costs!")
-            lines.append(f"   Monthly:  ${breakdown.monthly_cost:,.2f}")
-            lines.append(f"   Weekly:   ${breakdown.weekly_cost:,.2f}")
-            lines.append(f"   Daily:    ${breakdown.daily_cost:,.2f}")
-            lines.append(f"   Hourly:   ${breakdown.hourly_cost:,.2f}")
+                lines.append("   [WARNING] GPU-ENABLED INSTANCE - High compute costs!")
+
+            if breakdown.is_free_service:
+                lines.append("   Monthly:  $0.00 (No charge - AWS managed service)")
+            else:
+                lines.append(f"   Monthly:  ${breakdown.monthly_cost:,.2f}")
+                lines.append(f"   Weekly:   ${breakdown.weekly_cost:,.2f}")
+                lines.append(f"   Daily:    ${breakdown.daily_cost:,.2f}")
+                lines.append(f"   Hourly:   ${breakdown.hourly_cost:,.2f}")
             lines.append("")
 
         lines.append("=" * 80)
-        lines.append("📌 Note: Costs are estimates based on US East (N. Virginia) region")
-        lines.append("   Actual costs may vary based on region, usage, and AWS pricing changes")
+        lines.append("[NOTE] Costs are estimates based on US East (N. Virginia) region")
+        lines.append("       Actual costs may vary based on region, usage, and AWS pricing changes")
         lines.append("=" * 80)
 
         return "\n".join(lines)
@@ -402,13 +512,14 @@ class CostAnalyzer:
     def _get_cost_indicator(self, category: str) -> str:
         """Get visual indicator for cost category"""
         indicators = {
-            "critical": "🔴",
-            "high": "🟠",
-            "medium": "🟡",
-            "low": "🟢",
-            "minimal": "⚪",
+            "critical": "[CRITICAL]",
+            "high": "[HIGH]",
+            "medium": "[MEDIUM]",
+            "low": "[LOW]",
+            "minimal": "[MINIMAL]",
+            "free": "[FREE]",
         }
-        return indicators.get(category, "⚪")
+        return indicators.get(category, "[INFO]")
 
     def get_total_monthly_cost(self) -> float:
         """Get total monthly cost"""

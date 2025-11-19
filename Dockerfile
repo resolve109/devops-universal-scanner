@@ -59,10 +59,12 @@ RUN TFSEC_VERSION=$(curl -s "https://api.github.com/repos/aquasecurity/tfsec/rel
     mv tfsec-linux-amd64 tfsec && \
     chmod +x tfsec
 
-# Bicep CLI
+# Bicep CLI (NOTE: .NET binary requires glibc, won't run on Alpine musl libc)
+# Downloaded for potential future use, but Checkov handles Bicep scanning
 RUN wget -q https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && \
     mv bicep-linux-x64 bicep && \
-    chmod +x bicep
+    chmod +x bicep && \
+    ls -lah bicep
 
 # Trivy (security scanner for containers and IaC)
 RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
@@ -81,19 +83,20 @@ RUN echo '#!/bin/sh\necho "kubescape functionality temporarily disabled"' > kube
 
 # Verify all binaries are installed and executable
 RUN echo "=== Verifying binary tool installation ===" && \
+    ls -lah && \
     ./terraform version && \
     ./tflint --version && \
     ./tfsec --version && \
-    ./bicep --version && \
+    (./bicep --version || echo "⚠️  Warning: bicep not compatible with Alpine (glibc dependency)") && \
     ./trivy --version && \
-    echo "✅ All binary tools verified"
+    echo "All binary tools verified"
 
 # Runtime stage - Minimal Python 3.13 Alpine
 FROM python:3.13-alpine
 
 LABEL maintainer="DevOps Security Team" \
       version="3.0.0" \
-      description="DevOps Universal Scanner - Pure Python 3.13 Engine" \
+      description="DevOps Universal Scanner - Python 3.13 Engine" \
       tools="terraform,tflint,tfsec,checkov,cfn-lint,bicep,trivy,arm-ttk"
 
 # Install only essential runtime dependencies

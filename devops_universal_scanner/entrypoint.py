@@ -53,7 +53,7 @@ class DockerEntrypoint:
     def display_volume_error(self):
         """Display helpful error message for volume mount issues"""
         print("\n" + "=" * 80)
-        print("❌ ERROR: /work volume not mounted or empty")
+        print("[FAIL] /work volume not mounted or empty")
         print("=" * 80)
         print()
         print("The scanner requires your files to be mounted at /work inside the container.")
@@ -80,10 +80,10 @@ class DockerEntrypoint:
     def display_help(self):
         """Display help information"""
         help_text = """
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                   DevOps Universal Scanner v3.0                           ║
-║                     Pure Python 3.13 Engine                               ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+================================================================================
+                    DevOps Universal Scanner v3.0
+                      Pure Python 3.13 Engine
+================================================================================
 
 USAGE:
     docker run --rm -v "$(pwd):/work" spd109/devops-uat:latest <command> <target>
@@ -111,14 +111,14 @@ EXAMPLES:
     docker run --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-kubernetes deployment.yaml
 
 FEATURES:
-    ✅ Multi-tool scanning (Checkov, TFLint, TFSec, CFN-Lint, etc.)
-    ✅ Native intelligence layer with FinOps analysis
-    ✅ Live AWS/Azure/GCP pricing integration
-    ✅ CVE scanning for tools, AMIs, and container images
-    ✅ AI/ML GPU cost analysis
-    ✅ Enhanced security insights
-    ✅ Optimization recommendations
-    ✅ Single consolidated log file per scan
+    - Multi-tool scanning (Checkov, TFLint, TFSec, CFN-Lint, etc.)
+    - Native intelligence layer with FinOps analysis
+    - Live AWS/Azure/GCP pricing integration
+    - CVE scanning for tools, AMIs, and container images
+    - AI/ML GPU cost analysis
+    - Enhanced security insights
+    - Optimization recommendations
+    - Single consolidated log file per scan
 
 OUTPUT:
     Each scan generates a timestamped log file:
@@ -169,9 +169,9 @@ MORE INFO:
                 )
                 output = result.stdout.strip() or result.stderr.strip()
                 version_line = output.split('\n')[0]
-                print(f"  ✅ {tool_name}: {version_line}")
+                print(f"  [PASS] {tool_name}: {version_line}")
             except (subprocess.TimeoutExpired, FileNotFoundError, Exception):
-                print(f"  ⚠️  {tool_name}: Not found or error")
+                print(f"  [WARN] {tool_name}: Not found or error")
 
         print()
         print("=" * 80)
@@ -196,13 +196,13 @@ MORE INFO:
         # Map command to scan type
         scan_type = self.SCAN_COMMANDS.get(command)
         if not scan_type:
-            print(f"❌ Unknown command: {command}")
+            print(f"[FAIL] Unknown command: {command}")
             self.display_help()
             return 1
 
         # Get target (first arg after command)
         if not args:
-            print(f"❌ Error: No target specified for {command}")
+            print(f"[FAIL] No target specified for {command}")
             print(f"Usage: {command} <target>")
             return 1
 
@@ -226,10 +226,10 @@ MORE INFO:
             result = subprocess.run(cli_command)
             return result.returncode
         except KeyboardInterrupt:
-            print("\n⚠️  Scan interrupted")
+            print("\n[WARN] Scan interrupted")
             return 130
         except Exception as e:
-            print(f"❌ Error executing scan: {e}")
+            print(f"[FAIL] Error executing scan: {e}")
             return 1
 
     def run(self, args: List[str]) -> int:
@@ -265,7 +265,7 @@ MORE INFO:
             return self.route_scan_command(command, remaining_args)
 
         # Unknown command
-        print(f"❌ Unknown command: {command}")
+        print(f"[FAIL] Unknown command: {command}")
         self.display_help()
         return 1
 

@@ -105,8 +105,8 @@ class ToolRunner:
 
     def run_cfn_lint(self, target: Path) -> ToolResult:
         """Run cfn-lint on CloudFormation template"""
-        self.logger.section("🔧 Running CFN-Lint - CloudFormation Linter")
-        self.logger.message("Running CFN-Lint validation on template...")
+        self.logger.section("CFN-Lint - CloudFormation Linter", style="single")
+        self.logger.info("Running validation")
 
         result = self.run("cfn-lint", [str(target)])
 
@@ -122,24 +122,24 @@ class ToolRunner:
         # 8 = Informational messages
         # 10+ = Combination of above
         if result.exit_code == 0:
-            self.logger.success("CFN-Lint validation completed successfully - no issues found")
+            self.logger.success("No issues found")
         elif result.exit_code == 4 or result.exit_code == 8:
             # Warnings/Info only - not a failure
-            self.logger.warning(f"CFN-Lint found warnings/info (exit code: {result.exit_code})")
+            self.logger.warning(f"Warnings found (exit {result.exit_code})")
             # Override success flag for warnings-only
             result.success = True
         elif result.exit_code in [2, 6, 10, 12, 14]:
             # Errors found (with or without warnings)
-            self.logger.warning(f"CFN-Lint found errors (exit code: {result.exit_code})")
+            self.logger.warning(f"Validation errors found (exit {result.exit_code})")
         else:
-            self.logger.error(f"CFN-Lint scan failed (exit code: {result.exit_code})")
+            self.logger.error(f"Tool execution failed (exit {result.exit_code})")
 
         return result
 
     def run_checkov(self, target: Path, framework: str) -> ToolResult:
         """Run Checkov security scanner"""
-        self.logger.section("🛡️  Running Checkov - Infrastructure Security Scanner")
-        self.logger.message(f"Running Checkov security scan with framework: {framework}...")
+        self.logger.section("Checkov - Infrastructure Security Scanner", style="single")
+        self.logger.info(f"Running security scan (framework: {framework})")
 
         # Determine scan type
         if target.is_dir():
@@ -155,18 +155,18 @@ class ToolRunner:
 
         # Log result
         if result.exit_code == 0:
-            self.logger.success("Checkov scan completed - no issues found")
+            self.logger.success("No security issues found")
         elif result.exit_code == 1:
-            self.logger.warning(f"Checkov found security/compliance issues (exit code: {result.exit_code})")
+            self.logger.warning(f"Security issues found (exit {result.exit_code})")
         else:
-            self.logger.error(f"Checkov scan failed (exit code: {result.exit_code})")
+            self.logger.error(f"Tool execution failed (exit {result.exit_code})")
 
         return result
 
     def run_terraform_validate(self, target_dir: Path) -> ToolResult:
         """Run terraform validate"""
-        self.logger.section("🔧 Running Terraform Validate")
-        self.logger.message("Validating Terraform configuration...")
+        self.logger.section("Terraform Validate", style="single")
+        self.logger.info("Validating Terraform configuration")
 
         # Initialize first (required for validate)
         init_result = self.run("terraform", ["init", "-backend=false"], cwd=target_dir)
@@ -182,31 +182,31 @@ class ToolRunner:
             self.logger.tool_output(result.output)
 
         if result.exit_code == 0:
-            self.logger.success("Terraform validation completed successfully")
+            self.logger.success("Validation passed")
         else:
-            self.logger.error(f"Terraform validation failed (exit code: {result.exit_code})")
+            self.logger.error(f"Validation failed (exit {result.exit_code})")
 
         return result
 
     def run_tflint(self, target: Path) -> ToolResult:
         """Run TFLint on Terraform files"""
-        self.logger.section("🔧 Running TFLint - Terraform Linter")
+        self.logger.section("TFLint - Terraform Linter", style="single")
 
         # Initialize TFLint
         if target.is_dir():
-            self.logger.message("Initializing TFLint...")
+            self.logger.info("Initializing TFLint")
             init_result = self.run("tflint", ["--init"], cwd=target)
             if init_result.output:
                 self.logger.tool_output(init_result.output)
 
             if init_result.exit_code == 0:
-                self.logger.success("TFLint initialization completed")
+                self.logger.info("Initialization complete")
 
             # Run scan
-            self.logger.message("Running TFLint scan on directory...")
+            self.logger.info("Running scan")
             result = self.run("tflint", ["--chdir=."], cwd=target)
         else:
-            self.logger.message("Running TFLint scan on file...")
+            self.logger.info("Running scan")
             result = self.run("tflint", [
                 f"--chdir={target.parent}",
                 f"--filter={target.name}"
@@ -216,18 +216,18 @@ class ToolRunner:
             self.logger.tool_output(result.output)
 
         if result.exit_code == 0:
-            self.logger.success("TFLint scan completed successfully")
+            self.logger.success("No issues found")
         elif result.exit_code == 2:
-            self.logger.warning(f"TFLint found issues (exit code: {result.exit_code})")
+            self.logger.warning(f"Issues found (exit {result.exit_code})")
         else:
-            self.logger.error(f"TFLint scan failed (exit code: {result.exit_code})")
+            self.logger.error(f"Tool execution failed (exit {result.exit_code})")
 
         return result
 
     def run_tfsec(self, target: Path) -> ToolResult:
         """Run TFSec security scanner"""
-        self.logger.section("🔒 Running TFSec - Terraform Security Scanner")
-        self.logger.message("Running TFSec security scan...")
+        self.logger.section("TFSec - Terraform Security Scanner", style="single")
+        self.logger.info("Running security scan")
 
         result = self.run("tfsec", [str(target)])
 
@@ -235,11 +235,11 @@ class ToolRunner:
             self.logger.tool_output(result.output)
 
         if result.exit_code == 0:
-            self.logger.success("TFSec scan completed - no security issues found")
+            self.logger.success("No security issues found")
         elif result.exit_code == 1:
-            self.logger.warning(f"TFSec found security issues (exit code: {result.exit_code})")
+            self.logger.warning(f"Security issues found (exit {result.exit_code})")
         else:
-            self.logger.error(f"TFSec scan failed (exit code: {result.exit_code})")
+            self.logger.error(f"Tool execution failed (exit {result.exit_code})")
 
         return result
 
@@ -249,8 +249,8 @@ class ToolRunner:
             self.logger.warning("AWS CLI not available - skipping AWS validation")
             return ToolResult("aws", 127, "", "AWS CLI not available")
 
-        self.logger.section("☁️  Running AWS CloudFormation Validation")
-        self.logger.message("Attempting AWS CloudFormation template validation...")
+        self.logger.section("AWS CloudFormation Validation", style="single")
+        self.logger.info("Attempting template validation")
 
         result = self.run("aws", [
             "cloudformation", "validate-template",
@@ -261,11 +261,10 @@ class ToolRunner:
             self.logger.tool_output(result.output)
 
         if result.exit_code == 0:
-            self.logger.success("AWS CloudFormation validation completed successfully")
+            self.logger.success("Validation passed")
         else:
             self.logger.warning(
-                f"AWS CloudFormation validation failed (exit code: {result.exit_code}) "
-                "- may be due to credentials or connectivity"
+                f"Validation failed (exit {result.exit_code}) - may be due to credentials or connectivity"
             )
 
         return result

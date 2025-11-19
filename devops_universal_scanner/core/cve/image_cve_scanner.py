@@ -68,14 +68,14 @@ class ImageCVEScanner:
                 image_name=image_name,
                 image_tag=image_tag,
                 severity="LOW",
-                recommendation="⚠️  Using 'latest' tag is not recommended. Pin to specific version."
+                recommendation="Using 'latest' tag is not recommended. Pin to specific version."
             )
 
         return ImageCVE(
             image_name=image_name,
             image_tag=image_tag,
             has_cve=False,
-            recommendation="✅ No known CVEs (run Trivy scan for comprehensive check)"
+            recommendation="No known CVEs (run Trivy scan for comprehensive check)"
         )
 
     def extract_images_from_template(self, content: str) -> List[tuple]:
@@ -105,16 +105,16 @@ class ImageCVEScanner:
         lines = []
         lines.append("")
         lines.append("=" * 80)
-        lines.append("🐳 CONTAINER IMAGE SECURITY SCAN")
+        lines.append("CONTAINER IMAGE SECURITY SCAN")
         lines.append(f"   Scan Date: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S')} UTC")
         lines.append("=" * 80)
         lines.append("")
 
         for image in self.scan_results:
-            status = "❌" if image.has_cve else "✅"
+            status = "[FAIL]" if image.has_cve else "[PASS]"
             lines.append(f"{status} {image.image_name}:{image.image_tag}")
             if image.recommendation:
-                lines.append(f"   {image.recommendation}")
+                lines.append(f"        {image.recommendation}")
             lines.append("")
 
         lines.append("=" * 80)

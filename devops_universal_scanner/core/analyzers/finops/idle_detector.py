@@ -120,22 +120,22 @@ class IdleResourceDetector:
 
         total_waste = sum(w.monthly_waste for w in self.warnings)
 
-        lines.append(f"📊 POTENTIAL MONTHLY WASTE: ${total_waste:.2f}")
-        lines.append(f"📅 POTENTIAL ANNUAL WASTE: ${total_waste * 12:.2f}")
+        lines.append(f"[WASTE] POTENTIAL MONTHLY WASTE: ${total_waste:.2f}")
+        lines.append(f"[ANNUAL] POTENTIAL ANNUAL WASTE: ${total_waste * 12:.2f}")
         lines.append("")
 
         for i, warning in enumerate(self.warnings, 1):
             severity_indicator = {
-                "high": "🔴",
-                "medium": "🟡",
-                "low": "🟢",
-            }.get(warning.severity, "⚪")
+                "high": "[HIGH]",
+                "medium": "[MEDIUM]",
+                "low": "[LOW]",
+            }.get(warning.severity, "[INFO]")
 
             lines.append(f"{i}. {severity_indicator} {warning.resource_name}")
             lines.append(f"   Type: {warning.resource_type}")
             lines.append(f"   Issue: {warning.idle_reason}")
             lines.append(f"   Monthly Waste: ${warning.monthly_waste:.2f}")
-            lines.append(f"   💡 Recommendation: {warning.recommendation}")
+            lines.append(f"   [RECOMMENDATION] {warning.recommendation}")
             lines.append("")
 
         lines.append("=" * 80)

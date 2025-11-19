@@ -1,0 +1,369 @@
+AMI Alternative Suggestions - Workflow Diagram
+===============================================
+
+CURRENT BEHAVIOR (v3.0)
+----------------------
+
+┌─────────────────────────────────────────────────────────────┐
+│ CloudFormation/Terraform Template                           │
+│ Contains: ImageId: ami-0abcdef1234567890                    │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+          ┌────────────────────────┐
+          │  AMICVEScanner         │
+          │  .scan_template()      │
+          └────────┬───────────────┘
+                   │
+                   ▼
+          ┌────────────────────────┐
+          │  .check_ami()          │
+          │  - Check known CVEs    │
+          │  - Check outdated      │
+          └────────┬───────────────┘
+                   │
+                   ▼
+          ┌────────────────────────────────────────────┐
+          │  AMICVE Result                             │
+          │  - ami_id: ami-0abcdef1234567890           │
+          │  - has_cve: True                           │
+          │  - cve_ids: [CVE-2024-12345]               │
+          │  - severity: HIGH                          │
+          │  - recommendation: "Use latest AL2023 AMI" │  ← Generic
+          └────────┬───────────────────────────────────┘
+                   │
+                   ▼
+          ┌────────────────────────┐
+          │  .generate_report()    │
+          └────────┬───────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────────────────────────────┐
+│ OUTPUT:                                                      │
+│ AMIs WITH KNOWN CVEs:                                        │
+│    [FAIL] ami-0abcdef1234567890                              │
+│           CVEs: CVE-2024-12345                               │
+│           Severity: HIGH                                     │
+│           Recommendation: Use latest Amazon Linux 2023 AMI   │  ← Not actionable
+└──────────────────────────────────────────────────────────────┘
+
+
+ENHANCED BEHAVIOR (v3.1.0)
+-------------------------
+
+┌─────────────────────────────────────────────────────────────┐
+│ CloudFormation/Terraform Template                           │
+│ Contains: ImageId: ami-0abcdef1234567890                    │
+│          Region: us-east-1 (detected)                       │
+└──────────────────────┬──────────────────────────────────────┘
+                       │
+                       ▼
+          ┌────────────────────────┐
+          │  AMICVEScanner         │
+          │  .scan_template()      │
+          └────────┬───────────────┘
+                   │
+                   ▼
+          ┌────────────────────────┐
+          │  .check_ami()          │
+          │  - Check known CVEs    │
+          │  - Check outdated      │
+          └────────┬───────────────┘
+                   │
+                   ▼ CVEs detected
+          ┌─────────────────────────────────────────┐
+          │  AMIAlternativeFinder                   │  ← NEW!
+          │  .find_alternatives(ami_id, ami_name)   │
+          └────────┬────────────────────────────────┘
+                   │
+       ┌───────────┴───────────┐
+       │                       │
+       ▼                       ▼
+┌──────────────┐      ┌───────────────────┐
+│ AWS SSM API  │      │ Fallback Database │
+│ (if creds)   │      │ ami_alternatives  │
+│              │      │     .json         │
+│ Query params:│      │                   │
+│ /aws/service/│      │ Curated AMIs by:  │
+│ ami-amazon-  │      │ - Distribution    │
+│ linux-latest/│      │ - Region          │
+│ al2023-...   │      │ - Architecture    │
+└──────┬───────┘      └───────┬───────────┘
+       │                      │
+       └──────────┬───────────┘
+                  │
+                  ▼
+       ┌──────────────────────┐
+       │ Distribution         │
+       │ Detection            │
+       │                      │
+       │ "amzn2-ami-hvm"      │
+       │ → amazon_linux_2     │
+       └──────────┬───────────┘
+                  │
+                  ▼
+       ┌──────────────────────┐
+       │ CVE Verification     │
+       │                      │
+       │ Filter out AMIs with │
+       │ known CVEs           │
+       └──────────┬───────────┘
+                  │
+                  ▼
+       ┌──────────────────────────────────────┐
+       │ List[AMIAlternative]                 │
+       │                                      │
+       │ 1. ami-0abc123def456789a             │
+       │    AL2023.3.20250115 (us-east-1)     │
+       │    Verified CVE-free                 │
+       │                                      │
+       │ 2. ami-0xyz987uvw654321b             │
+       │    Ubuntu 24.04 LTS (us-east-1)      │
+       │    Verified CVE-free                 │
+       │                                      │
+       │ 3. ami-0def456ghi789012c             │
+       │    AL2023.3.20250115 (us-west-2)     │
+       │    Verified CVE-free                 │
+       └──────────┬───────────────────────────┘
+                  │
+                  ▼
+          ┌────────────────────────────────────────────┐
+          │  AMICVE Result                             │
+          │  - ami_id: ami-0abcdef1234567890           │
+          │  - has_cve: True                           │
+          │  - cve_ids: [CVE-2024-12345]               │
+          │  - severity: HIGH                          │
+          │  - recommendation: "Use latest AL2023 AMI" │
+          │  - suggested_alternatives: [3 AMIs]        │  ← NEW!
+          └────────┬───────────────────────────────────┘
+                   │
+                   ▼
+          ┌────────────────────────┐
+          │  .generate_report()    │
+          └────────┬───────────────┘
+                   │
+                   ▼
+┌────────────────────────────────────────────────────────────────────┐
+│ OUTPUT:                                                            │
+│ AMIs WITH KNOWN CVEs:                                              │
+│    [FAIL] ami-0abcdef1234567890                                    │
+│           CVEs: CVE-2024-12345                                     │
+│           Severity: HIGH                                           │
+│           Recommendation: Use latest Amazon Linux 2023 AMI         │
+│           Suggested Alternatives:                                  │  ← NEW!
+│             - ami-0abc123def456789a                                │
+│               Amazon Linux 2023.3.20250115 (us-east-1)             │
+│               Last Updated: 2025-01-15                             │
+│               Status: CVE-free (verified)                          │
+│             - ami-0xyz987uvw654321b                                │
+│               Ubuntu 24.04 LTS (us-east-1)                         │
+│               Last Updated: 2025-01-14                             │
+│               Status: CVE-free (verified)                          │
+│             - ami-0def456ghi789012c                                │
+│               Amazon Linux 2023.3.20250115 (us-west-2)             │
+│               Last Updated: 2025-01-15                             │
+│               Status: CVE-free (verified)                          │
+└────────────────────────────────────────────────────────────────────┘
+                                    ▲
+                                    │
+                              Actionable!
+                              User can copy/paste AMI IDs
+
+
+DISTRIBUTION DETECTION FLOW
+---------------------------
+
+AMI Name: "amzn2-ami-hvm-2.0.20250115-x86_64-gp2"
+                   │
+                   ▼
+┌──────────────────────────────────────────────┐
+│ Pattern Matching                             │
+│                                              │
+│ Regex: r'amzn2|amazon.*linux.*2(?!023)'      │
+│ Match: amzn2-ami-hvm                         │
+└──────────────────┬───────────────────────────┘
+                   │
+                   ▼
+         Distribution: "amazon_linux_2"
+                   │
+                   ▼
+┌──────────────────────────────────────────────┐
+│ SSM Parameter Path Selection                 │
+│                                              │
+│ /aws/service/ami-amazon-linux-latest/        │
+│ amzn2-ami-hvm-x86_64-gp2                     │
+└──────────────────┬───────────────────────────┘
+                   │
+                   ▼
+         Query SSM → Get latest AMI ID
+
+
+AWS SSM INTEGRATION FLOW
+------------------------
+
+┌────────────────────────┐
+│ Check AWS Credentials  │
+└────────┬───────────────┘
+         │
+    ┌────┴────┐
+    │ Found?  │
+    └────┬────┘
+         │
+    ┌────┴────────┐
+    │             │
+    Yes           No
+    │             │
+    ▼             ▼
+┌─────────────┐  ┌──────────────────┐
+│ boto3       │  │ Skip AWS API     │
+│ SSM Client  │  │ Use fallback DB  │
+└─────┬───────┘  └──────────────────┘
+      │
+      ▼
+┌─────────────────────────┐
+│ Query SSM Parameter     │
+│                         │
+│ ssm.get_parameter(      │
+│   Name='...'            │
+│ )                       │
+└─────┬───────────────────┘
+      │
+  ┌───┴───┐
+  │Success│
+  └───┬───┘
+      │
+  ┌───┴────────┐
+  │            │
+  Yes          No (error/rate limit)
+  │            │
+  ▼            ▼
+┌─────────┐  ┌──────────────┐
+│ Return  │  │ Fallback to  │
+│ AMI ID  │  │ Database     │
+└─────────┘  └──────────────┘
+
+
+GRACEFUL DEGRADATION STRATEGY
+-----------------------------
+
+Level 1: AWS SSM API (Best - Always Current)
+      │
+      ├─ Success → Return AMI IDs
+      │
+      └─ Failure ↓
+
+Level 2: Fallback Database (Good - Monthly Updates)
+      │
+      ├─ Success → Return AMI IDs
+      │
+      └─ Failure ↓
+
+Level 3: Generic Suggestions (Acceptable)
+      │
+      └─ Suggest: "Amazon Linux 2023" without specific ID
+
+
+ERROR HANDLING MATRIX
+--------------------
+
+┌─────────────────────┬──────────────────┬─────────────────┐
+│ Error Type          │ Handling         │ Fallback        │
+├─────────────────────┼──────────────────┼─────────────────┤
+│ No AWS Credentials  │ Log warning      │ Use database    │
+│ SSM API Unavailable │ Catch exception  │ Use database    │
+│ Rate Limit          │ Use cached       │ Use database    │
+│ Unknown Distro      │ Log warning      │ Generic suggest │
+│ Region Unsupported  │ Log warning      │ Nearby region   │
+│ Database Missing    │ Log error        │ Generic suggest │
+│ All Fallbacks Fail  │ Log critical     │ Show generic    │
+└─────────────────────┴──────────────────┴─────────────────┘
+
+
+CACHING STRATEGY
+---------------
+
+┌──────────────────────────────────────────┐
+│ AMIAlternativeFinder                     │
+│                                          │
+│ Cache Layers:                            │
+│                                          │
+│ 1. In-Memory Cache (1 hour TTL)          │
+│    - SSM responses                       │
+│    - CVE verification results            │
+│    - Distribution detection              │
+│                                          │
+│ 2. Fallback Database (Monthly refresh)   │
+│    - Curated AMI IDs                     │
+│    - Verified CVE-free                   │
+│    - All major regions                   │
+│                                          │
+│ Cache Keys:                              │
+│ - f"ssm_{distribution}_{arch}_{region}"  │
+│ - f"cve_{ami_id}"                        │
+│ - f"dist_{ami_name_hash}"                │
+└──────────────────────────────────────────┘
+
+
+TESTING WORKFLOW
+---------------
+
+┌────────────────────┐
+│ Unit Tests         │
+│                    │
+│ - Mock boto3 SSM   │
+│ - Test patterns    │
+│ - Test fallback    │
+│ - Test CVE check   │
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐
+│ Integration Tests  │
+│                    │
+│ - Real templates   │
+│ - Multi-region     │
+│ - Multi-arch       │
+│ - AWS API (opt)    │
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐
+│ Manual Testing     │
+│                    │
+│ - CFN templates    │
+│ - TF templates     │
+│ - With/without AWS │
+│ - Different regions│
+└────────┬───────────┘
+         │
+         ▼
+┌────────────────────┐
+│ Docker E2E Test    │
+│                    │
+│ - Build image      │
+│ - Run scans        │
+│ - Verify output    │
+└────────────────────┘
+
+
+ROLLOUT PLAN
+-----------
+
+Phase 1: Development
+└─> Implement core functionality
+
+Phase 2: Alpha Testing
+└─> Internal testing with sample templates
+
+Phase 3: Beta Release (v3.1.0-beta)
+└─> Limited release for user feedback
+
+Phase 4: Production Release (v3.1.0)
+└─> Full release to Docker Hub
+
+Phase 5: Post-Release
+└─> Monitor usage, gather feedback
+
+Phase 6: Enhancements (v3.2.0)
+└─> Add cost comparison, auto-fix, etc.
+

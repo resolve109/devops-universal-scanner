@@ -65,20 +65,20 @@ class GPUCostAnalyzer:
         gpu_info = self._get_gpu_info(instance_type)
 
         recommendations_list = [
-            "💰 GPU instances are expensive - ensure they're actually needed",
-            f"⏰ GPU cost: ${breakdown.hourly_cost:.2f}/hour - minimize idle time",
+            "[COST] GPU instances are expensive - ensure they're actually needed",
+            f"[COST] GPU cost: ${breakdown.hourly_cost:.2f}/hour - minimize idle time",
         ]
 
         # Add specific recommendations based on instance type
         if "p3" in instance_type.lower() or "p4" in instance_type.lower():
             recommendations_list.extend([
-                "🎯 Consider Spot Instances for training (up to 70% savings)",
-                "📊 Use CloudWatch to monitor GPU utilization",
-                "⚡ Ensure you're using all GPUs (check nvidia-smi)",
+                "[SPOT] Consider Spot Instances for training (up to 70% savings)",
+                "[MONITORING] Use CloudWatch to monitor GPU utilization",
+                "[GPU] Ensure you're using all GPUs (check nvidia-smi)",
             ])
         elif "g4" in instance_type.lower():
             recommendations_list.extend([
-                "🎮 G4 instances are optimized for inference, not training",
+                "[INFO] G4 instances are optimized for inference, not training",
                 "Consider G5 for better price/performance for ML inference",
             ])
 
@@ -88,7 +88,7 @@ class GPUCostAnalyzer:
             monthly_cost=breakdown.monthly_cost,
             gpu_type=gpu_info["type"],
             use_case=gpu_info["use_case"],
-            recommendation=f"⚡ GPU Instance: {gpu_info['description']}",
+            recommendation=f"[GPU] GPU Instance: {gpu_info['description']}",
             cost_optimization=recommendations_list
         )
 
@@ -137,21 +137,21 @@ class GPUCostAnalyzer:
         lines = []
         lines.append("")
         lines.append("=" * 80)
-        lines.append("⚡ AI/ML GPU COST ANALYSIS")
+        lines.append("[AI/ML] GPU COST ANALYSIS")
         lines.append("=" * 80)
         lines.append("")
 
         total_gpu_cost = sum(rec.monthly_cost for rec in self.recommendations)
 
-        lines.append(f"🎯 GPU INSTANCES DETECTED: {len(self.recommendations)}")
-        lines.append(f"💰 TOTAL GPU COST:")
+        lines.append(f"[INFO] GPU INSTANCES DETECTED: {len(self.recommendations)}")
+        lines.append("[COST] TOTAL GPU COST:")
         lines.append(f"   Monthly:  ${total_gpu_cost:,.2f}")
         lines.append(f"   Daily:    ${total_gpu_cost / 30:,.2f}")
         lines.append(f"   Hourly:   ${total_gpu_cost / 730:,.2f}")
         lines.append("")
 
         for i, rec in enumerate(self.recommendations, 1):
-            lines.append(f"{i}. ⚡ {rec.resource_name}")
+            lines.append(f"{i}. [GPU] {rec.resource_name}")
             lines.append(f"   Instance: {rec.instance_type}")
             lines.append(f"   GPU Type: {rec.gpu_type}")
             lines.append(f"   Use Case: {rec.use_case}")
@@ -159,7 +159,7 @@ class GPUCostAnalyzer:
             lines.append(f"   Daily Cost: ${rec.monthly_cost / 30:,.2f}")
             lines.append(f"   Hourly Cost: ${rec.monthly_cost / 730:,.2f}")
             lines.append("")
-            lines.append("   💡 Recommendations:")
+            lines.append("   [RECOMMENDATIONS]")
             for opt in rec.cost_optimization:
                 lines.append(f"   {opt}")
             lines.append("")
