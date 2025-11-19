@@ -7,6 +7,7 @@ Note: AWS Pricing API is only available in us-east-1 and ap-south-1
 
 import json
 import logging
+import subprocess
 from typing import Dict, Optional, Tuple
 from datetime import datetime
 from devops_universal_scanner.core.pricing.pricing_cache import PricingCache
@@ -67,46 +68,61 @@ class AWSPricingAPI:
         self._initialize_boto3()
 
     def _initialize_boto3(self) -> None:
-        """Initialize boto3 client and check for credentials"""
+        """Initialize boto3 client and check for credentials using AWS CLI"""
         try:
             import boto3
-            from botocore.exceptions import NoCredentialsError, PartialCredentialsError
-
             self.boto3_available = True
             logger.debug("boto3 is available")
 
-            # Try to create pricing client (Pricing API is only in us-east-1)
-            try:
-                self.pricing_client = boto3.client('pricing', region_name='us-east-1')
-
-                # Test credentials by making a minimal API call
-                # Use get_products with a very specific filter to minimize data transfer
-                test_response = self.pricing_client.get_products(
-                    ServiceCode='AmazonEC2',
-                    Filters=[
-                        {'Type': 'TERM_MATCH', 'Field': 'instanceType', 'Value': 't2.nano'},
-                        {'Type': 'TERM_MATCH', 'Field': 'operatingSystem', 'Value': 'Linux'},
-                    ],
-                    MaxResults=1
-                )
-
-                self.credentials_available = True
-                logger.info("AWS credentials found and validated - Live pricing API enabled")
-
-            except NoCredentialsError:
-                self.initialization_error = "No AWS credentials found"
-                logger.warning("No AWS credentials configured (AWS_ACCESS_KEY_ID/AWS_SECRET_ACCESS_KEY not set)")
-            except PartialCredentialsError:
-                self.initialization_error = "Incomplete AWS credentials"
-                logger.warning("Incomplete AWS credentials (missing ACCESS_KEY or SECRET_KEY)")
-            except Exception as e:
-                self.initialization_error = f"AWS API test failed: {str(e)}"
-                logger.warning(f"AWS Pricing API test failed: {e}")
+            # Check AWS credentials using AWS CLI (simpler and more reliable)
+            if self._check_aws_credentials():
+                try:
+                    # Create pricing client (Pricing API is only in us-east-1)
+                    self.pricing_client = boto3.client('pricing', region_name='us-east-1')
+                    self.credentials_available = True
+                    logger.info("AWS credentials found and validated - Live pricing API enabled")
+                except Exception as e:
+                    self.initialization_error = f"Failed to create pricing client: {str(e)}"
+                    logger.warning(f"Failed to create AWS Pricing client: {e}")
+            else:
+                self.initialization_error = "No AWS credentials configured"
+                logger.warning("No AWS credentials configured - use 'aws configure' or set environment variables")
 
         except ImportError:
             self.boto3_available = False
             self.initialization_error = "boto3 not installed"
             logger.warning("boto3 not installed - falling back to static pricing")
+
+    def _check_aws_credentials(self) -> bool:
+        """
+        Check if AWS credentials are configured using AWS CLI
+
+        This is simpler and more reliable than boto3 credential detection
+        because it works with ALL credential methods (env vars, ~/.aws/credentials,
+        IAM roles, SSO, etc.)
+
+        Returns:
+            bool: True if AWS credentials are configured and working
+        """
+        try:
+            result = subprocess.run(
+                ['aws', 's3', 'ls'],
+                capture_output=True,
+                timeout=5,
+                text=True
+            )
+            # Exit code 0 means credentials work
+            # Exit code 255 or other means no credentials or AWS CLI not installed
+            return result.returncode == 0
+        except subprocess.TimeoutExpired:
+            logger.debug("AWS credential check timed out")
+            return False
+        except FileNotFoundError:
+            logger.debug("AWS CLI not installed")
+            return False
+        except Exception as e:
+            logger.debug(f"AWS credential check failed: {e}")
+            return False
 
     def get_ec2_pricing(self, instance_type: str, region: str = None) -> Optional[Dict]:
         """

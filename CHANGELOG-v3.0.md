@@ -55,6 +55,44 @@ Enhanced:
 
 ## 🔥 Critical Bug Fixes (2025-11-18)
 
+### Cloud Credential Detection - SIMPLIFIED ✅
+**Issue**: Complex boto3/Azure SDK credential detection was fragile and didn't work with all credential methods
+**Root Cause**: Using SDK-specific credential chains that didn't detect IAM roles, SSO, managed identities, etc.
+**Impact**: Scanner couldn't detect credentials configured via CLI or cloud-native methods
+
+**Changes Made**:
+1. **Switched to CLI-based credential detection** (much simpler and more reliable):
+   - **AWS**: `aws s3 ls` (exit code 0 = credentials work)
+   - **Azure**: `az account show` (exit code 0 = credentials work)
+   - **GCP**: `gcloud auth list` (exit code 0 + output = credentials work)
+
+2. **Benefits of CLI-based approach**:
+   - Works with ALL credential methods:
+     - AWS: env vars, ~/.aws/credentials, IAM roles, SSO, etc.
+     - Azure: az login, service principals, managed identities
+     - GCP: gcloud auth, service accounts, application default credentials
+   - Simpler code - no complex SDK credential chain parsing
+   - More reliable - uses the same tools users already have configured
+   - Consistent behavior across all cloud providers
+
+3. **Enhanced error reporting**:
+   - Clear messages: "Azure CLI not installed", "No GCP credentials configured"
+   - Helpful guidance: "Run 'az login' to authenticate with Azure"
+   - Detailed status in `get_pricing_status()` for all providers
+
+4. **Created test script**: `test_credential_detection.py`
+   - Tests all three cloud providers
+   - Shows detailed status and configuration guidance
+   - Provides clear summary of which credentials are available
+
+**Files Modified**:
+- `core/pricing/aws_pricing.py` - Added `_check_aws_credentials()` method
+- `core/pricing/azure_pricing.py` - Added `_check_azure_credentials()` method
+- `core/pricing/gcp_pricing.py` - Added `_check_gcp_credentials()` method
+- `test_credential_detection.py` - New test script
+
+**Result**: Credential detection now works with any authentication method and provides clear feedback
+
 ### AWS Pricing API Integration - FIXED ✅
 **Issue**: Scanner was ALWAYS using fallback pricing data even when AWS credentials were configured
 **Root Cause**: `_fetch_ec2_price_from_api()` was stubbed out and hardcoded to return `None`
@@ -63,13 +101,12 @@ Enhanced:
 **Changes Made**:
 1. **Implemented full boto3 integration** in `core/pricing/aws_pricing.py`
    - Detects boto3 availability on initialization
-   - Validates AWS credentials with test API call
+   - Validates AWS credentials with CLI-based detection (simpler than SDK)
    - Uses live AWS Pricing API when credentials available
    - Falls back to static data only when necessary
 
 2. **Enhanced credential detection**:
-   - Checks for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
-   - Tests credentials with minimal API call on startup
+   - Uses `aws s3 ls` command (works with ALL credential methods)
    - Provides clear error messages when credentials missing
 
 3. **Improved error reporting**:
