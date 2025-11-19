@@ -75,6 +75,24 @@ class CostAnalyzer:
         """
         # Parse template to get parameters
         import yaml
+
+        # Add custom YAML constructors for CloudFormation intrinsic functions
+        def cfn_constructor(loader, tag_suffix, node):
+            """Generic constructor for CloudFormation tags"""
+            # For !Ref, !Sub, !GetAtt etc., return as dict for proper resolution
+            if isinstance(node, yaml.ScalarNode):
+                value = loader.construct_scalar(node)
+                if tag_suffix in ('Ref', 'Sub', 'GetAtt', 'Join', 'Select'):
+                    return {tag_suffix: value}
+                return value
+            elif isinstance(node, yaml.SequenceNode):
+                return loader.construct_sequence(node)
+            elif isinstance(node, yaml.MappingNode):
+                return loader.construct_mapping(node)
+            return None
+
+        yaml.SafeLoader.add_multi_constructor('!', cfn_constructor)
+
         try:
             template = yaml.safe_load(file_content)
             parameters = template.get("Parameters", {})
@@ -119,12 +137,37 @@ class CostAnalyzer:
         resources = []
 
         try:
+            # Add custom YAML constructors for CloudFormation intrinsic functions
+            # These allow safe_load to handle !Ref, !Sub, !GetAtt, etc.
+            def cfn_constructor(loader, tag_suffix, node):
+                """Generic constructor for CloudFormation tags"""
+                # For !Ref, !Sub, !GetAtt etc., return as dict for proper resolution
+                if isinstance(node, yaml.ScalarNode):
+                    value = loader.construct_scalar(node)
+                    if tag_suffix in ('Ref', 'Sub', 'GetAtt', 'Join', 'Select'):
+                        return {tag_suffix: value}
+                    return value
+                elif isinstance(node, yaml.SequenceNode):
+                    return loader.construct_sequence(node)
+                elif isinstance(node, yaml.MappingNode):
+                    return loader.construct_mapping(node)
+                return None
+
+            # Register constructors for common CloudFormation tags
+            yaml.SafeLoader.add_multi_constructor('!', cfn_constructor)
+
             # Try YAML first
             try:
                 data = yaml.safe_load(content)
-            except:
-                # Try JSON
-                data = json.loads(content)
+            except Exception as yaml_error:
+                # Try JSON as fallback
+                try:
+                    data = json.loads(content)
+                except Exception as json_error:
+                    import sys
+                    print(f"DEBUG: YAML parse error: {yaml_error}", file=sys.stderr)
+                    print(f"DEBUG: JSON parse error: {json_error}", file=sys.stderr)
+                    raise yaml_error
 
             cf_resources = data.get("Resources", {})
 
@@ -148,11 +191,9 @@ class CostAnalyzer:
                 })
 
         except Exception as e:
-            # If parsing fails, return empty list but log the error
-            import sys
-            print(f"DEBUG: CloudFormation parsing failed: {e}", file=sys.stderr)
-            import traceback
-            traceback.print_exc()
+            # If parsing fails, return empty list
+            # Silently fail as this is expected for some templates
+            pass
 
         return resources
 
@@ -316,7 +357,7 @@ class CostAnalyzer:
 
         lines = []
         lines.append("=" * 80)
-        lines.append("💰 FINOPS COST ANALYSIS")
+        lines.append("💰 COST BREAKDOWN")
         lines.append("=" * 80)
         lines.append("")
 

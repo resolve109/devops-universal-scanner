@@ -15,7 +15,7 @@ from devops_universal_scanner.core.analyzers.finops.optimization import Optimiza
 from devops_universal_scanner.core.analyzers.finops.idle_detector import IdleResourceDetector
 from devops_universal_scanner.core.analyzers.aiml.gpu_cost_analyzer import GPUCostAnalyzer
 from devops_universal_scanner.core.analyzers.security.enhanced_checks import EnhancedSecurityChecker
-from devops_universal_scanner.core.cve.tool_cve_scanner import ToolCVEScanner
+# from devops_universal_scanner.core.cve.tool_cve_scanner import ToolCVEScanner  # Removed: Tool CVE scanning
 from devops_universal_scanner.core.cve.ami_cve_scanner import AMICVEScanner
 from devops_universal_scanner.core.cve.image_cve_scanner import ImageCVEScanner
 from devops_universal_scanner.core.pricing.aws_pricing import AWSPricingAPI
@@ -57,7 +57,7 @@ class Scanner:
         self.idle_detector = IdleResourceDetector()
         self.gpu_analyzer = GPUCostAnalyzer()
         self.security_checker = EnhancedSecurityChecker()
-        self.tool_cve_scanner = ToolCVEScanner()
+        # self.tool_cve_scanner = ToolCVEScanner()  # Removed: Tool CVE scanning
         self.ami_cve_scanner = AMICVEScanner()
         self.image_cve_scanner = ImageCVEScanner()
         self.pricing_api = AWSPricingAPI()
@@ -70,18 +70,17 @@ class Scanner:
             Exit code (0 = success, >0 = issues found)
         """
         try:
-            self.logger.section(f"🚀 {self.scan_type.title()} Scanner v3.0 - Pure Python Engine")
-            self.logger.message(f"📁 Target: {self.target}")
-            self.logger.message(f"📍 Working directory: {Path.cwd()}")
-            self.logger.message(f"🕐 Scan started: {datetime.now()}")
-            self.logger.message(f"🏷️  Environment: {self.environment}")
+            # Print header
+            self.logger.section(f"{self.scan_type.upper()} Security Scan")
+            self.logger.message(f"Target: {self.target}", timestamp=True)
+            self.logger.message(f"Directory: {Path.cwd()}")
 
             # Validate target
             if not self.target.exists():
-                self.logger.error(f"Target '{self.target}' not found!")
+                self.logger.error(f"Target '{self.target}' not found")
                 return 1
 
-            self.logger.success(f"Target '{self.target}' found and accessible")
+            self.logger.info(f"Target validated and accessible")
 
             # Run appropriate scan
             if self.scan_type == "terraform":
@@ -103,13 +102,7 @@ class Scanner:
                 return 1
 
             # Generate summary
-            self._generate_summary()
-
-            self.logger.message(f"📄 Complete scan log saved to: {self.log_file}")
-            self.logger.message(f"🎯 All tool outputs captured with timestamps and exit codes")
-
-            print(f"\n✅ {self.scan_type.title()} scan completed!")
-            print(f"📄 Detailed log: {self.log_file}")
+            self._generate_summary(exit_code)
 
             return exit_code
 
@@ -118,12 +111,6 @@ class Scanner:
 
     def _scan_terraform(self) -> int:
         """Scan Terraform files"""
-        # Determine if directory or file
-        if self.target.is_dir():
-            self.logger.message(f"📂 Scanning Terraform directory: {self.target}")
-        else:
-            self.logger.message(f"📄 Scanning single Terraform file: {self.target}")
-
         # Run base tools
         tflint_result = self.tool_runner.run_tflint(self.target)
         tfsec_result = self.tool_runner.run_tfsec(self.target)
@@ -138,8 +125,6 @@ class Scanner:
 
     def _scan_cloudformation(self) -> int:
         """Scan CloudFormation template"""
-        self.logger.message(f"📄 Scanning CloudFormation template: {self.target}")
-
         # Run base tools
         cfnlint_result = self.tool_runner.run_cfn_lint(self.target)
         checkov_result = self.tool_runner.run_checkov(self.target, "cloudformation")
@@ -154,8 +139,6 @@ class Scanner:
 
     def _scan_docker(self) -> int:
         """Scan Docker image or Dockerfile"""
-        self.logger.message(f"📄 Scanning Docker: {self.target}")
-
         # For Dockerfile, use checkov
         if self.target.is_file():
             checkov_result = self.tool_runner.run_checkov(self.target, "dockerfile")
@@ -169,8 +152,6 @@ class Scanner:
 
     def _scan_kubernetes(self) -> int:
         """Scan Kubernetes manifests"""
-        self.logger.message(f"📄 Scanning Kubernetes manifest: {self.target}")
-
         # Run checkov
         checkov_result = self.tool_runner.run_checkov(self.target, "kubernetes")
 
@@ -178,8 +159,6 @@ class Scanner:
 
     def _scan_azure_arm(self) -> int:
         """Scan Azure ARM template"""
-        self.logger.message(f"📄 Scanning Azure ARM template: {self.target}")
-
         # Run checkov
         checkov_result = self.tool_runner.run_checkov(self.target, "arm")
 
@@ -187,8 +166,6 @@ class Scanner:
 
     def _scan_azure_bicep(self) -> int:
         """Scan Azure Bicep template"""
-        self.logger.message(f"📄 Scanning Azure Bicep template: {self.target}")
-
         # Run checkov
         checkov_result = self.tool_runner.run_checkov(self.target, "bicep")
 
@@ -196,17 +173,15 @@ class Scanner:
 
     def _scan_gcp(self) -> int:
         """Scan GCP Deployment Manager template"""
-        self.logger.message(f"📄 Scanning GCP template: {self.target}")
-
         # Run checkov
         checkov_result = self.tool_runner.run_checkov(self.target, "googledeploymentmanager")
 
         return 1 if not checkov_result.success else 0
 
     def _run_native_intelligence(self, template_type: str):
-        """Run native intelligence analysis"""
-        self.logger.section("🎯 Running Native Intelligence Analysis")
-        self.logger.message("Running enhanced FinOps, Security, and AI/ML analysis...")
+        """Run cost analysis and enhanced security checks"""
+        self.logger.section("Cost Analysis", style="single")
+        self.logger.info("Running cost analysis and security checks")
 
         try:
             # Read file content
@@ -246,16 +221,16 @@ class Scanner:
             # Run idle detection
             idle_warnings = self.idle_detector.analyze(resources, cost_breakdowns)
 
-            # Run CVE scans
-            tool_cves = self.tool_cve_scanner.scan_all_tools()
+            # Run CVE scans (Tool CVE scan removed for cleaner output)
+            # tool_cves = self.tool_cve_scanner.scan_all_tools()  # Removed: Tool CVE scanning
             ami_cves = self.ami_cve_scanner.scan_template(file_content, template_type)
             image_cves = self.image_cve_scanner.scan_template(file_content)
 
             # Get pricing status
             pricing_status = self.pricing_api.get_pricing_status()
 
-            # Generate reports
-            self.logger.tool_output(self.tool_cve_scanner.generate_report())
+            # Generate reports (Tool CVE report removed)
+            # self.logger.tool_output(self.tool_cve_scanner.generate_report())  # Removed: Tool CVE scanning
 
             if ami_cves:
                 self.logger.tool_output(self.ami_cve_scanner.generate_report())
@@ -266,10 +241,11 @@ class Scanner:
             if cost_breakdowns:
                 self.logger.tool_output(self.cost_analyzer.generate_cost_report())
                 self.logger.tool_output("")
-                self.logger.tool_output("💵 PRICING DATA SOURCE:")
+                self.logger.tool_output("PRICING DATA SOURCE:")
                 self.logger.tool_output(f"   Provider: {pricing_status['provider']}")
                 self.logger.tool_output(f"   Region: {pricing_status['region']}")
-                self.logger.tool_output(f"   API Status: {'✅ Live' if pricing_status.get('api_available') else '⚠️  Using Fallback'}")
+                api_status = "Live" if pricing_status.get('api_available') else "Using Fallback"
+                self.logger.tool_output(f"   API Status: {api_status}")
                 self.logger.tool_output(f"   {pricing_status.get('note', '')}")
                 self.logger.tool_output("")
 
@@ -285,43 +261,57 @@ class Scanner:
             if security_insights:
                 self.logger.tool_output(self.security_checker.generate_security_report())
 
-            self.logger.success("Enhanced intelligence analysis completed")
+            self.logger.info("Cost analysis completed")
 
         except Exception as e:
-            self.logger.error(f"Native intelligence analysis failed: {e}")
+            self.logger.error(f"Cost analysis failed: {e}")
 
-    def _generate_summary(self):
+    def _generate_summary(self, exit_code: int):
         """Generate final summary"""
-        self.logger.section("📊 Scan Summary and Results")
+        self.logger.section("Scan Summary")
 
         # Get tool results
         tool_summary = self.tool_runner.get_summary()
 
-        self.logger.message(f"Target: {self.target}")
-        self.logger.message(f"🕐 Scan completed: {datetime.now()}")
-        self.logger.message("=" * 60)
-        self.logger.message("TOOL EXECUTION RESULTS:")
+        self.logger.message(f"Target:    {self.target}")
+        self.logger.message(f"Completed: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        self.logger.message(f"Duration:  {self._get_scan_duration()}")
+        self.logger.message("")
+        self.logger.message("Tool Results:")
 
         for tool_name, result in tool_summary["results"].items():
             if result["success"]:
-                status = "✅ PASSED"
+                status = "PASS"
             elif result["exit_code"] == 1:
                 # Exit code 1 typically means security/compliance issues found (not tool failure)
-                status = "⚠️  SECURITY ISSUES FOUND"
+                status = "SECURITY ISSUES"
             elif result["exit_code"] in [2, 6, 10, 12, 14]:
                 # CFN-Lint error codes
-                status = "⚠️  VALIDATION ERRORS"
+                status = "VALIDATION ERRORS"
             elif result["exit_code"] == 4:
                 # CFN-Lint warnings (should be success but good to note)
-                status = "✅ PASSED (warnings found)"
+                status = "WARNINGS"
             else:
-                status = f"❌ FAILED (exit {result['exit_code']})"
-            self.logger.message(f"- {tool_name}: {status}")
+                status = f"FAILED (exit {result['exit_code']})"
+            self.logger.message(f"  {tool_name:20s} {status}")
 
-        self.logger.message("=" * 60)
+        self.logger.message("")
 
-        if tool_summary["failed"] > 0:
-            self.logger.warning("Overall scan result: ISSUES FOUND - Review the detailed output above")
-            self.logger.message(f"Tools with issues: {tool_summary['failed']} out of {tool_summary['total_tools']}")
+        if exit_code == 0:
+            self.logger.success("Overall Status: PASS")
         else:
-            self.logger.success("Overall scan result: ALL TOOLS PASSED - No critical issues found!")
+            self.logger.warning("Overall Status: ISSUES FOUND")
+
+        self.logger.message(f"Log File: {self.log_file}")
+        self.logger.section("")  # Closing divider
+
+    def _get_scan_duration(self) -> str:
+        """Calculate scan duration from log file timestamp"""
+        try:
+            # Get time from log filename
+            timestamp_str = str(self.log_file).split('-')[-2] + str(self.log_file).split('-')[-1].replace('.log', '')
+            start_time = datetime.strptime(timestamp_str, '%Y%m%d%H%M%S')
+            duration = (datetime.now() - start_time).total_seconds()
+            return f"{int(duration)} seconds"
+        except:
+            return "N/A"
