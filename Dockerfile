@@ -43,35 +43,40 @@ RUN pip install --no-cache-dir azure-cli==2.55.0
 WORKDIR /tmp/binaries
 
 # Terraform
-RUN TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
-    wget -q https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
+RUN TERRAFORM_VERSION=$(curl -s https://api.github.com/repos/hashicorp/terraform/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) || TERRAFORM_VERSION="1.9.8" && \
+    echo "Installing Terraform version: ${TERRAFORM_VERSION}" && \
+    wget https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     unzip terraform_${TERRAFORM_VERSION}_linux_amd64.zip && \
     chmod +x terraform && \
     rm *.zip
 
 # TFLint
-RUN TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
-    wget -q https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && \
+RUN TFLINT_VERSION=$(curl -s https://api.github.com/repos/terraform-linters/tflint/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) || TFLINT_VERSION="0.50.3" && \
+    echo "Installing TFLint version: ${TFLINT_VERSION}" && \
+    wget https://github.com/terraform-linters/tflint/releases/download/v${TFLINT_VERSION}/tflint_linux_amd64.zip && \
     unzip tflint_linux_amd64.zip && \
     chmod +x tflint && \
     rm *.zip
 
 # TFSec
-RUN TFSEC_VERSION=$(curl -s "https://api.github.com/repos/aquasecurity/tfsec/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') && \
-    wget -q "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-amd64" && \
+RUN TFSEC_VERSION=$(curl -s "https://api.github.com/repos/aquasecurity/tfsec/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/') || TFSEC_VERSION="v1.28.10" && \
+    echo "Installing TFSec version: ${TFSEC_VERSION}" && \
+    wget "https://github.com/aquasecurity/tfsec/releases/download/${TFSEC_VERSION}/tfsec-linux-amd64" && \
     mv tfsec-linux-amd64 tfsec && \
     chmod +x tfsec
 
 # Bicep CLI (NOTE: .NET binary requires glibc, won't run on Alpine musl libc)
 # Downloaded for potential future use, but Checkov handles Bicep scanning
-RUN wget -q https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && \
+RUN echo "Installing Bicep CLI..." && \
+    wget https://github.com/Azure/bicep/releases/latest/download/bicep-linux-x64 && \
     mv bicep-linux-x64 bicep && \
     chmod +x bicep && \
     ls -lah bicep
 
 # Trivy (security scanner for containers and IaC)
-RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) && \
-    wget -q https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
+RUN TRIVY_VERSION=$(curl -s https://api.github.com/repos/aquasecurity/trivy/releases/latest | grep tag_name | cut -d '"' -f 4 | cut -c 2-) || TRIVY_VERSION="0.58.1" && \
+    echo "Installing Trivy version: ${TRIVY_VERSION}" && \
+    wget https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
     tar -xzf trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz && \
     chmod +x trivy && \
     rm trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz
