@@ -18,7 +18,7 @@ Reference PR for GitHub Action runner (based on the YAML runner)
 
 Checkov scans cloud infrastructure configurations to find misconfigurations before they&#39;re deployed.
 
-Checkov uses a common command-line interface to manage and analyze infrastructure as code (IaC) scan results across platforms such as Terraform, CloudFormation, Kubernetes, Helm, ARM Templates and Serverless framework.
+Checkov uses a common command-line interface to manage and analyze infrastructure as code (IaC) scan results across platforms such as Terraform, CloudFormation, Kubernetes, Helm, ARM Templates, and Serverless framework.
 
 ### What is a &quot;runner&quot;?
 
