@@ -55,6 +55,46 @@ Enhanced:
 
 ## 🔥 Critical Bug Fixes (2025-11-18)
 
+### AWS Pricing API Integration - FIXED ✅
+**Issue**: Scanner was ALWAYS using fallback pricing data even when AWS credentials were configured
+**Root Cause**: `_fetch_ec2_price_from_api()` was stubbed out and hardcoded to return `None`
+**Impact**: Users with AWS credentials configured never got live pricing data
+
+**Changes Made**:
+1. **Implemented full boto3 integration** in `core/pricing/aws_pricing.py`
+   - Detects boto3 availability on initialization
+   - Validates AWS credentials with test API call
+   - Uses live AWS Pricing API when credentials available
+   - Falls back to static data only when necessary
+
+2. **Enhanced credential detection**:
+   - Checks for `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`
+   - Tests credentials with minimal API call on startup
+   - Provides clear error messages when credentials missing
+
+3. **Improved error reporting**:
+   - `get_pricing_status()` now shows exact reason for fallback:
+     - "boto3 not installed"
+     - "No AWS credentials found"
+     - "Incomplete AWS credentials"
+     - "AWS API test failed: [error]"
+   - Includes `fallback_data_source` field pointing to `core/data/cost_estimates.py`
+   - Shows `how_to_configure` when credentials needed
+
+4. **Added comprehensive logging**:
+   - INFO: "AWS credentials found and validated - Live pricing API enabled"
+   - WARNING: "No AWS credentials configured"
+   - ERROR: "AWS Pricing API call failed for [instance]: [error]"
+
+5. **Live pricing features**:
+   - EC2 instance pricing from AWS Pricing API
+   - RDS instance pricing from AWS Pricing API
+   - Region-specific pricing using `AWS_REGION_LOCATION_MAP`
+   - 1-hour caching to reduce API calls
+   - Source attribution: "aws_pricing_api" vs "static_fallback"
+
+**Result**: Scanner now uses live AWS pricing when credentials are available, with clear feedback about data source
+
 ### Docker Build & Runtime Issues - RESOLVED ✅
 - **FIXED**: Python dependencies not being installed due to invalid package `azure-mgmt-pricing>=1.0.0b1`
 - **FIXED**: Silent pip install failures causing checkov, cfn-lint, and yaml to be unavailable at runtime
