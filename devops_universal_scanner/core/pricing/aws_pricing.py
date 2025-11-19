@@ -68,25 +68,32 @@ class AWSPricingAPI:
         self._initialize_boto3()
 
     def _initialize_boto3(self) -> None:
-        """Initialize boto3 client and check for credentials using AWS CLI"""
+        """
+        Initialize boto3 client for AWS Pricing API
+
+        Note: AWS Pricing API is PUBLIC and does NOT require credentials!
+        We can use it without any AWS authentication.
+        """
         try:
             import boto3
+            from botocore import UNSIGNED
+            from botocore.config import Config
             self.boto3_available = True
             logger.debug("boto3 is available")
 
-            # Check AWS credentials using AWS CLI (simpler and more reliable)
-            if self._check_aws_credentials():
-                try:
-                    # Create pricing client (Pricing API is only in us-east-1)
-                    self.pricing_client = boto3.client('pricing', region_name='us-east-1')
-                    self.credentials_available = True
-                    logger.info("AWS credentials found and validated - Live pricing API enabled")
-                except Exception as e:
-                    self.initialization_error = f"Failed to create pricing client: {str(e)}"
-                    logger.warning(f"Failed to create AWS Pricing client: {e}")
-            else:
-                self.initialization_error = "No AWS credentials configured"
-                logger.warning("No AWS credentials configured - use 'aws configure' or set environment variables")
+            try:
+                # Create ANONYMOUS pricing client (Pricing API is public, no auth needed)
+                # Pricing API is only available in us-east-1
+                self.pricing_client = boto3.client(
+                    'pricing',
+                    region_name='us-east-1',
+                    config=Config(signature_version=UNSIGNED)
+                )
+                self.credentials_available = True
+                logger.info("AWS Pricing API client initialized (public API, no credentials required)")
+            except Exception as e:
+                self.initialization_error = f"Failed to create pricing client: {str(e)}"
+                logger.warning(f"Failed to create AWS Pricing client: {e}")
 
         except ImportError:
             self.boto3_available = False
@@ -448,17 +455,17 @@ class AWSPricingAPI:
             "status": status,
         }
 
-        # Add detailed error message if using fallback
+        # Add detailed message
         if not self.credentials_available:
             if not self.boto3_available:
                 status_dict["note"] = "boto3 not installed. Install with: pip install boto3"
                 status_dict["fallback_data_source"] = "devops_universal_scanner/core/data/cost_estimates.py"
             else:
-                status_dict["note"] = f"AWS credentials not configured. {self.initialization_error or 'Unknown error'}"
-                status_dict["how_to_configure"] = "Set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables, or configure with 'aws configure'"
+                status_dict["note"] = f"Pricing API initialization failed: {self.initialization_error or 'Unknown error'}"
                 status_dict["fallback_data_source"] = "devops_universal_scanner/core/data/cost_estimates.py"
         else:
-            status_dict["note"] = "Live AWS Pricing API is active"
+            status_dict["note"] = "Live AWS Pricing API (public, no credentials required)"
             status_dict["last_update"] = self.last_update or "Not yet fetched"
+            status_dict["api_info"] = "AWS Pricing API is publicly accessible and requires no authentication"
 
         return status_dict
