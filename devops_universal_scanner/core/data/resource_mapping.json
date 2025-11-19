@@ -1,0 +1,5026 @@
+{
+  "compute": {
+    "aws_ec2_instance": {
+      "terraform": "aws_instance",
+      "cloudformation": "AWS::EC2::Instance",
+      "pulumi": "aws.ec2.Instance",
+      "cdk": "ec2.Instance",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "ec2_instance",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "security_group"
+        ],
+        "recommended": [
+          "vpc",
+          "iam_instance_profile",
+          "key_pair"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "public_ip_assigned",
+          "message": "EC2 has public IP",
+          "severity": "HIGH",
+          "recommendation": "Use private subnet with NAT Gateway"
+        },
+        {
+          "check": "missing_iam_role",
+          "message": "No IAM role",
+          "severity": "MEDIUM",
+          "recommendation": "Attach IAM instance profile"
+        },
+        {
+          "check": "unrestricted_sg",
+          "message": "SG allows 0.0.0.0/0",
+          "severity": "CRITICAL",
+          "recommendation": "Restrict to specific IPs"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_79",
+        "CKV_AWS_8",
+        "CKV_AWS_126",
+        "CKV_AWS_135"
+      ]
+    },
+    "aws_autoscaling_group": {
+      "terraform": "aws_autoscaling_group",
+      "cloudformation": "AWS::AutoScaling::AutoScalingGroup",
+      "pulumi": "aws.autoscaling.Group",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "autoscaling_group",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "launch_template",
+          "subnet"
+        ],
+        "recommended": [
+          "load_balancer",
+          "target_group"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "no_health_check",
+          "message": "No health checks",
+          "severity": "MEDIUM",
+          "recommendation": "Enable ELB or EC2 health checks"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_153"
+      ]
+    },
+    "aws_launch_template": {
+      "terraform": "aws_launch_template",
+      "cloudformation": "AWS::EC2::LaunchTemplate",
+      "pulumi": "aws.ec2.LaunchTemplate",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "launch_template",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "security_group",
+          "iam_instance_profile"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "imdsv2",
+          "message": "IMDSv2 not enforced",
+          "severity": "HIGH",
+          "recommendation": "Set http_tokens = required"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_79",
+        "CKV_AWS_46"
+      ]
+    },
+    "aws_batch_compute_environment": {
+      "terraform": "aws_batch_compute_environment",
+      "cloudformation": "AWS::Batch::ComputeEnvironment",
+      "pulumi": "aws.batch.ComputeEnvironment",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "batch_compute_environment",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role",
+          "subnet"
+        ],
+        "recommended": [
+          "security_group"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_188"
+      ]
+    },
+    "azure_virtual_machine": {
+      "terraform": "azurerm_virtual_machine",
+      "arm": "Microsoft.Compute/virtualMachines",
+      "bicep": "Microsoft.Compute/virtualMachines",
+      "pulumi": "azure.compute.VirtualMachine",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "virtual_machine",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "network_interface",
+          "subnet"
+        ],
+        "recommended": [
+          "nsg",
+          "managed_identity",
+          "disk_encryption_set"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "public_ip",
+          "message": "VM has public IP",
+          "severity": "HIGH",
+          "recommendation": "Use Bastion"
+        },
+        {
+          "check": "disk_encryption",
+          "message": "Disk not encrypted",
+          "severity": "CRITICAL",
+          "recommendation": "Enable Azure Disk Encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_1",
+        "CKV_AZURE_12",
+        "CKV_AZURE_50"
+      ]
+    },
+    "azure_vmss": {
+      "terraform": "azurerm_virtual_machine_scale_set",
+      "arm": "Microsoft.Compute/virtualMachineScaleSets",
+      "bicep": "Microsoft.Compute/virtualMachineScaleSets",
+      "pulumi": "azure.compute.ScaleSet",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "vm_scale_set",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "load_balancer",
+          "managed_identity"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AZURE_97"
+      ]
+    },
+    "aws_lightsail_instance": {
+      "terraform": "aws_lightsail_instance",
+      "cloudformation": "AWS::Lightsail::Instance",
+      "pulumi": "aws.lightsail.Instance",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "lightsail_instance",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_ip",
+          "message": "Instance has public IP",
+          "severity": "MEDIUM",
+          "recommendation": "Review public exposure"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_spot_instance_request": {
+      "terraform": "aws_spot_instance_request",
+      "cloudformation": "AWS::EC2::SpotFleet",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "spot_instance",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "security_group"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_126"
+      ]
+    },
+    "azure_app_service": {
+      "terraform": "azurerm_app_service",
+      "arm": "Microsoft.Web/sites",
+      "bicep": "Microsoft.Web/sites",
+      "pulumi": "azure.appservice.AppService",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "app_service",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "app_service_plan"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "https_only",
+          "message": "HTTPS not enforced",
+          "severity": "HIGH",
+          "recommendation": "Enable https_only"
+        },
+        {
+          "check": "ftps_only",
+          "message": "FTPS not enforced",
+          "severity": "MEDIUM",
+          "recommendation": "Set ftps_state = FtpsOnly"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_17",
+        "CKV_AZURE_18",
+        "CKV_AZURE_63",
+        "CKV_AZURE_71",
+        "CKV_AZURE_78",
+        "CKV_AZURE_80"
+      ]
+    },
+    "azure_batch_account": {
+      "terraform": "azurerm_batch_account",
+      "arm": "Microsoft.Batch/batchAccounts",
+      "bicep": "Microsoft.Batch/batchAccounts",
+      "pulumi": "azure.batch.Account",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "batch_account",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "storage_account"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AZURE_76"
+      ]
+    },
+    "azure_service_fabric_cluster": {
+      "terraform": "azurerm_service_fabric_cluster",
+      "arm": "Microsoft.ServiceFabric/clusters",
+      "bicep": "Microsoft.ServiceFabric/clusters",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "service_fabric_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "protection_level",
+          "message": "Weak protection level",
+          "severity": "HIGH",
+          "recommendation": "Set to EncryptAndSign"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_125"
+      ]
+    },
+    "aws_ec2_capacity_reservation": {
+      "terraform": "aws_ec2_capacity_reservation",
+      "cloudformation": "AWS::EC2::CapacityReservation",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "capacity_reservation",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_ec2_fleet": {
+      "terraform": "aws_ec2_fleet",
+      "cloudformation": "AWS::EC2::EC2Fleet",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "ec2_fleet",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "launch_template"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_apprunner_service": {
+      "terraform": "aws_apprunner_service",
+      "cloudformation": "AWS::AppRunner::Service",
+      "pulumi": "aws.apprunner.Service",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "apprunner_service",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "auto_scaling",
+          "message": "Auto-scaling not configured",
+          "severity": "LOW",
+          "recommendation": "Configure auto-scaling"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_268"
+      ]
+    },
+    "aws_placement_group": {
+      "terraform": "aws_placement_group",
+      "cloudformation": "AWS::EC2::PlacementGroup",
+      "resource_type": "compute",
+      "cloud_provider": "aws",
+      "canonical_name": "placement_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_windows_virtual_machine": {
+      "terraform": "azurerm_windows_virtual_machine",
+      "arm": "Microsoft.Compute/virtualMachines",
+      "bicep": "Microsoft.Compute/virtualMachines",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "windows_vm",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "network_interface"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_linux_virtual_machine": {
+      "terraform": "azurerm_linux_virtual_machine",
+      "arm": "Microsoft.Compute/virtualMachines",
+      "bicep": "Microsoft.Compute/virtualMachines",
+      "resource_type": "compute",
+      "cloud_provider": "azure",
+      "canonical_name": "linux_vm",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "network_interface"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "container": {
+    "aws_ecs_cluster": {
+      "terraform": "aws_ecs_cluster",
+      "cloudformation": "AWS::ECS::Cluster",
+      "pulumi": "aws.ecs.Cluster",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "ecs_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "cloudwatch_log_group"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "container_insights",
+          "message": "Container Insights disabled",
+          "severity": "LOW",
+          "recommendation": "Enable Container Insights"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_65"
+      ]
+    },
+    "aws_ecs_service": {
+      "terraform": "aws_ecs_service",
+      "cloudformation": "AWS::ECS::Service",
+      "pulumi": "aws.ecs.Service",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "ecs_service",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "ecs_cluster",
+          "ecs_task_definition"
+        ],
+        "recommended": [
+          "load_balancer",
+          "service_discovery"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "public_ip",
+          "message": "Public IP assigned",
+          "severity": "HIGH",
+          "recommendation": "Disable assign_public_ip"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_107"
+      ]
+    },
+    "aws_ecs_task_definition": {
+      "terraform": "aws_ecs_task_definition",
+      "cloudformation": "AWS::ECS::TaskDefinition",
+      "pulumi": "aws.ecs.TaskDefinition",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "ecs_task_definition",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": [
+          "cloudwatch_log_group"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "privileged",
+          "message": "Privileged mode",
+          "severity": "CRITICAL",
+          "recommendation": "Disable privileged mode"
+        },
+        {
+          "check": "root_user",
+          "message": "Running as root",
+          "severity": "HIGH",
+          "recommendation": "Use non-root user"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_97",
+        "CKV_AWS_34"
+      ]
+    },
+    "aws_eks_cluster": {
+      "terraform": "aws_eks_cluster",
+      "cloudformation": "AWS::EKS::Cluster",
+      "pulumi": "aws.eks.Cluster",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "eks_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role",
+          "subnet"
+        ],
+        "recommended": [
+          "security_group",
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "public_endpoint",
+          "message": "Public API endpoint",
+          "severity": "MEDIUM",
+          "recommendation": "Enable private endpoint"
+        },
+        {
+          "check": "secrets_encryption",
+          "message": "No envelope encryption",
+          "severity": "HIGH",
+          "recommendation": "Enable KMS encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_37",
+        "CKV_AWS_38",
+        "CKV_AWS_39",
+        "CKV_AWS_58"
+      ]
+    },
+    "aws_ecr_repository": {
+      "terraform": "aws_ecr_repository",
+      "cloudformation": "AWS::ECR::Repository",
+      "pulumi": "aws.ecr.Repository",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "ecr_repository",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "image_scanning",
+          "message": "Image scanning disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable image scanning on push"
+        },
+        {
+          "check": "immutable_tags",
+          "message": "Tag mutability enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable image tag immutability"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_51",
+        "CKV_AWS_136"
+      ]
+    },
+    "azure_aks": {
+      "terraform": "azurerm_kubernetes_cluster",
+      "arm": "Microsoft.ContainerService/managedClusters",
+      "bicep": "Microsoft.ContainerService/managedClusters",
+      "pulumi": "azure.containerservice.KubernetesCluster",
+      "resource_type": "container",
+      "cloud_provider": "azure",
+      "canonical_name": "aks_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "log_analytics_workspace",
+          "acr",
+          "managed_identity"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "rbac",
+          "message": "RBAC not enabled",
+          "severity": "CRITICAL",
+          "recommendation": "Enable Kubernetes RBAC"
+        },
+        {
+          "check": "network_policy",
+          "message": "No network policy",
+          "severity": "HIGH",
+          "recommendation": "Enable network policy"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_4",
+        "CKV_AZURE_6",
+        "CKV_AZURE_7",
+        "CKV_AZURE_8"
+      ]
+    },
+    "azure_acr": {
+      "terraform": "azurerm_container_registry",
+      "arm": "Microsoft.ContainerRegistry/registries",
+      "bicep": "Microsoft.ContainerRegistry/registries",
+      "pulumi": "azure.containerservice.Registry",
+      "resource_type": "container",
+      "cloud_provider": "azure",
+      "canonical_name": "container_registry",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "admin_user",
+          "message": "Admin user enabled",
+          "severity": "HIGH",
+          "recommendation": "Disable admin user, use RBAC"
+        },
+        {
+          "check": "public_network",
+          "message": "Public network access",
+          "severity": "MEDIUM",
+          "recommendation": "Restrict to private endpoint"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_139",
+        "CKV_AZURE_163"
+      ]
+    },
+    "azure_container_instance": {
+      "terraform": "azurerm_container_group",
+      "arm": "Microsoft.ContainerInstance/containerGroups",
+      "bicep": "Microsoft.ContainerInstance/containerGroups",
+      "pulumi": "azure.containerinstance.Group",
+      "resource_type": "container",
+      "cloud_provider": "azure",
+      "canonical_name": "container_instance",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "subnet",
+          "managed_identity"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AZURE_98"
+      ]
+    },
+    "aws_eks_node_group": {
+      "terraform": "aws_eks_node_group",
+      "cloudformation": "AWS::EKS::Nodegroup",
+      "pulumi": "aws.eks.NodeGroup",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "eks_node_group",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "eks_cluster",
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_38"
+      ]
+    },
+    "aws_eks_fargate_profile": {
+      "terraform": "aws_eks_fargate_profile",
+      "cloudformation": "AWS::EKS::FargateProfile",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "eks_fargate_profile",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "eks_cluster"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_ecr_lifecycle_policy": {
+      "terraform": "aws_ecr_lifecycle_policy",
+      "resource_type": "container",
+      "cloud_provider": "aws",
+      "canonical_name": "ecr_lifecycle",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "ecr_repository"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "serverless": {
+    "aws_lambda_function": {
+      "terraform": "aws_lambda_function",
+      "cloudformation": "AWS::Lambda::Function",
+      "pulumi": "aws.lambda.Function",
+      "cdk": "lambda.Function",
+      "serverless": "AWS::Serverless::Function",
+      "resource_type": "serverless",
+      "cloud_provider": "aws",
+      "canonical_name": "lambda_function",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": [
+          "cloudwatch_log_group",
+          "vpc_config",
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "tracing",
+          "message": "X-Ray tracing disabled",
+          "severity": "LOW",
+          "recommendation": "Enable active tracing"
+        },
+        {
+          "check": "env_encryption",
+          "message": "Env vars not encrypted",
+          "severity": "MEDIUM",
+          "recommendation": "Use KMS encryption"
+        },
+        {
+          "check": "public_access",
+          "message": "Function URL public",
+          "severity": "HIGH",
+          "recommendation": "Restrict with IAM"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_45",
+        "CKV_AWS_50",
+        "CKV_AWS_115",
+        "CKV_AWS_116",
+        "CKV_AWS_117",
+        "CKV_AWS_173"
+      ]
+    },
+    "azure_function_app": {
+      "terraform": "azurerm_function_app",
+      "arm": "Microsoft.Web/sites",
+      "bicep": "Microsoft.Web/sites",
+      "pulumi": "azure.appservice.FunctionApp",
+      "resource_type": "serverless",
+      "cloud_provider": "azure",
+      "canonical_name": "function_app",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "storage_account",
+          "app_service_plan"
+        ],
+        "recommended": [
+          "application_insights",
+          "key_vault"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "https_only",
+          "message": "HTTPS not enforced",
+          "severity": "HIGH",
+          "recommendation": "Set https_only = true"
+        },
+        {
+          "check": "managed_identity",
+          "message": "No managed identity",
+          "severity": "MEDIUM",
+          "recommendation": "Enable managed identity"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_56",
+        "CKV_AZURE_70"
+      ]
+    },
+    "aws_lambda_layer_version": {
+      "terraform": "aws_lambda_layer_version",
+      "cloudformation": "AWS::Lambda::LayerVersion",
+      "pulumi": "aws.lambda.LayerVersion",
+      "resource_type": "serverless",
+      "cloud_provider": "aws",
+      "canonical_name": "lambda_layer",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_lambda_event_source_mapping": {
+      "terraform": "aws_lambda_event_source_mapping",
+      "cloudformation": "AWS::Lambda::EventSourceMapping",
+      "pulumi": "aws.lambda.EventSourceMapping",
+      "resource_type": "serverless",
+      "cloud_provider": "aws",
+      "canonical_name": "lambda_event_source",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "lambda_function"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "storage": {
+    "aws_s3_bucket": {
+      "terraform": "aws_s3_bucket",
+      "cloudformation": "AWS::S3::Bucket",
+      "pulumi": "aws.s3.Bucket",
+      "cdk": "s3.Bucket",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_bucket",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key",
+          "s3_bucket_policy"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "versioning",
+          "message": "Versioning disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable versioning"
+        },
+        {
+          "check": "encryption",
+          "message": "Encryption disabled",
+          "severity": "CRITICAL",
+          "recommendation": "Enable default encryption"
+        },
+        {
+          "check": "public_access",
+          "message": "Public access allowed",
+          "severity": "CRITICAL",
+          "recommendation": "Block all public access"
+        },
+        {
+          "check": "logging",
+          "message": "Access logging disabled",
+          "severity": "LOW",
+          "recommendation": "Enable access logging"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_18",
+        "CKV_AWS_19",
+        "CKV_AWS_20",
+        "CKV_AWS_21",
+        "CKV_AWS_52",
+        "CKV_AWS_53",
+        "CKV_AWS_54",
+        "CKV_AWS_144",
+        "CKV_AWS_145"
+      ]
+    },
+    "aws_ebs_volume": {
+      "terraform": "aws_ebs_volume",
+      "cloudformation": "AWS::EC2::Volume",
+      "pulumi": "aws.ebs.Volume",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "ebs_volume",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Volume not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption with KMS"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_3"
+      ]
+    },
+    "aws_efs_file_system": {
+      "terraform": "aws_efs_file_system",
+      "cloudformation": "AWS::EFS::FileSystem",
+      "pulumi": "aws.efs.FileSystem",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "efs_file_system",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Encryption at rest disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption"
+        },
+        {
+          "check": "transit_encryption",
+          "message": "Encryption in transit not enforced",
+          "severity": "MEDIUM",
+          "recommendation": "Enforce TLS"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_42"
+      ]
+    },
+    "aws_fsx_lustre": {
+      "terraform": "aws_fsx_lustre_file_system",
+      "cloudformation": "AWS::FSx::FileSystem",
+      "pulumi": "aws.fsx.LustreFileSystem",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "fsx_lustre",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_223"
+      ]
+    },
+    "azure_storage_account": {
+      "terraform": "azurerm_storage_account",
+      "arm": "Microsoft.Storage/storageAccounts",
+      "bicep": "Microsoft.Storage/storageAccounts",
+      "pulumi": "azure.storage.Account",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "storage_account",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "https_only",
+          "message": "HTTPS not enforced",
+          "severity": "HIGH",
+          "recommendation": "Enable https_traffic_only"
+        },
+        {
+          "check": "min_tls",
+          "message": "TLS 1.2 not enforced",
+          "severity": "MEDIUM",
+          "recommendation": "Set minimum_tls_version = TLS1_2"
+        },
+        {
+          "check": "public_access",
+          "message": "Public network access",
+          "severity": "HIGH",
+          "recommendation": "Restrict to private endpoints"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_33",
+        "CKV_AZURE_35",
+        "CKV_AZURE_36",
+        "CKV_AZURE_43",
+        "CKV_AZURE_59"
+      ]
+    },
+    "azure_managed_disk": {
+      "terraform": "azurerm_managed_disk",
+      "arm": "Microsoft.Compute/disks",
+      "bicep": "Microsoft.Compute/disks",
+      "pulumi": "azure.compute.Disk",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "managed_disk",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "disk_encryption_set"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Customer-managed key not used",
+          "severity": "MEDIUM",
+          "recommendation": "Use disk encryption set with CMK"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_2"
+      ]
+    },
+    "aws_s3_bucket_public_access_block": {
+      "terraform": "aws_s3_bucket_public_access_block",
+      "cloudformation": "AWS::S3::BucketPublicAccessBlock",
+      "pulumi": "aws.s3.BucketPublicAccessBlock",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_public_access_block",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_53",
+        "CKV_AWS_54",
+        "CKV_AWS_55",
+        "CKV_AWS_56"
+      ]
+    },
+    "aws_backup_vault": {
+      "terraform": "aws_backup_vault",
+      "cloudformation": "AWS::Backup::BackupVault",
+      "pulumi": "aws.backup.Vault",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "backup_vault",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "kms_encryption",
+          "message": "Not encrypted with KMS",
+          "severity": "MEDIUM",
+          "recommendation": "Use KMS CMK"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_166"
+      ]
+    },
+    "aws_glacier_vault": {
+      "terraform": "aws_glacier_vault",
+      "cloudformation": "AWS::Glacier::Vault",
+      "pulumi": "aws.glacier.Vault",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "glacier_vault",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "access_policy",
+          "message": "No access policy",
+          "severity": "LOW",
+          "recommendation": "Configure vault access policy"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_fsx_windows_file_system": {
+      "terraform": "aws_fsx_windows_file_system",
+      "cloudformation": "AWS::FSx::FileSystem",
+      "pulumi": "aws.fsx.WindowsFileSystem",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "fsx_windows",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_180"
+      ]
+    },
+    "aws_storage_gateway": {
+      "terraform": "aws_storagegateway_gateway",
+      "cloudformation": "AWS::StorageGateway::Gateway",
+      "pulumi": "aws.storagegateway.Gateway",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "storage_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_data_lake_store": {
+      "terraform": "azurerm_data_lake_store",
+      "arm": "Microsoft.DataLakeStore/accounts",
+      "bicep": "Microsoft.DataLakeStore/accounts",
+      "pulumi": "azure.datalake.Store",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "data_lake_store",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Encryption not configured",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_90"
+      ]
+    },
+    "azure_netapp_account": {
+      "terraform": "azurerm_netapp_account",
+      "arm": "Microsoft.NetApp/netAppAccounts",
+      "bicep": "Microsoft.NetApp/netAppAccounts",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "netapp_account",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_ebs_snapshot": {
+      "terraform": "aws_ebs_snapshot",
+      "cloudformation": "AWS::EC2::Snapshot",
+      "pulumi": "aws.ebs.Snapshot",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "ebs_snapshot",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Snapshot not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Create from encrypted volume"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_3"
+      ]
+    },
+    "aws_s3_bucket_versioning": {
+      "terraform": "aws_s3_bucket_versioning",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_versioning",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_21"
+      ]
+    },
+    "aws_s3_bucket_logging": {
+      "terraform": "aws_s3_bucket_logging",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_logging",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_18"
+      ]
+    },
+    "azure_storage_blob": {
+      "terraform": "azurerm_storage_blob",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "storage_blob",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "storage_account"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_disk_encryption_set": {
+      "terraform": "azurerm_disk_encryption_set",
+      "arm": "Microsoft.Compute/diskEncryptionSets",
+      "bicep": "Microsoft.Compute/diskEncryptionSets",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "disk_encryption_set",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "key_vault"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_s3_bucket_policy": {
+      "terraform": "aws_s3_bucket_policy",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_bucket_policy",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_access",
+          "message": "Bucket policy allows public access",
+          "severity": "CRITICAL",
+          "recommendation": "Restrict access"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_s3_bucket_notification": {
+      "terraform": "aws_s3_bucket_notification",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_notification",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_s3_bucket_acl": {
+      "terraform": "aws_s3_bucket_acl",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "s3_acl",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_read",
+          "message": "Public read ACL",
+          "severity": "CRITICAL",
+          "recommendation": "Use private ACL"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_ebs_encryption_by_default": {
+      "terraform": "aws_ebs_encryption_by_default",
+      "resource_type": "storage",
+      "cloud_provider": "aws",
+      "canonical_name": "ebs_default_encryption",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_storage_container": {
+      "terraform": "azurerm_storage_container",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "storage_container",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "storage_account"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_storage_share": {
+      "terraform": "azurerm_storage_share",
+      "resource_type": "storage",
+      "cloud_provider": "azure",
+      "canonical_name": "storage_share",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "storage_account"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "database": {
+    "aws_db_instance": {
+      "terraform": "aws_db_instance",
+      "cloudformation": "AWS::RDS::DBInstance",
+      "pulumi": "aws.rds.Instance",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "rds_instance",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "security_group"
+        ],
+        "recommended": [
+          "kms_key",
+          "parameter_group"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "public_access",
+          "message": "Publicly accessible",
+          "severity": "CRITICAL",
+          "recommendation": "Set publicly_accessible = false"
+        },
+        {
+          "check": "encryption",
+          "message": "Storage not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable storage_encrypted"
+        },
+        {
+          "check": "backup",
+          "message": "Automated backups disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Set backup_retention_period > 0"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_17",
+        "CKV_AWS_157",
+        "CKV_AWS_161"
+      ]
+    },
+    "aws_rds_cluster": {
+      "terraform": "aws_rds_cluster",
+      "cloudformation": "AWS::RDS::DBCluster",
+      "pulumi": "aws.rds.Cluster",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "rds_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Storage not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable storage_encrypted"
+        },
+        {
+          "check": "deletion_protection",
+          "message": "Deletion protection disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable deletion_protection"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_96",
+        "CKV_AWS_128",
+        "CKV_AWS_162"
+      ]
+    },
+    "aws_dynamodb_table": {
+      "terraform": "aws_dynamodb_table",
+      "cloudformation": "AWS::DynamoDB::Table",
+      "pulumi": "aws.dynamodb.Table",
+      "cdk": "dynamodb.Table",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "dynamodb_table",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Encryption at rest not enabled",
+          "severity": "HIGH",
+          "recommendation": "Enable server_side_encryption"
+        },
+        {
+          "check": "point_in_time_recovery",
+          "message": "PITR disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable point_in_time_recovery"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_28",
+        "CKV_AWS_119"
+      ]
+    },
+    "aws_elasticache_cluster": {
+      "terraform": "aws_elasticache_cluster",
+      "cloudformation": "AWS::ElastiCache::CacheCluster",
+      "pulumi": "aws.elasticache.Cluster",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "elasticache_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "security_group"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "transit_encryption",
+          "message": "Encryption in transit disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable transit_encryption_enabled"
+        },
+        {
+          "check": "at_rest_encryption",
+          "message": "Encryption at rest disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable at_rest_encryption_enabled"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_29",
+        "CKV_AWS_30"
+      ]
+    },
+    "aws_neptune_cluster": {
+      "terraform": "aws_neptune_cluster",
+      "cloudformation": "AWS::Neptune::DBCluster",
+      "pulumi": "aws.neptune.Cluster",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "neptune_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Storage not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable storage_encrypted"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_44",
+        "CKV_AWS_101"
+      ]
+    },
+    "aws_documentdb_cluster": {
+      "terraform": "aws_docdb_cluster",
+      "cloudformation": "AWS::DocDB::DBCluster",
+      "pulumi": "aws.docdb.Cluster",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "documentdb_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Storage not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable storage_encrypted"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_74",
+        "CKV_AWS_104"
+      ]
+    },
+    "azure_sql_database": {
+      "terraform": "azurerm_sql_database",
+      "arm": "Microsoft.Sql/servers/databases",
+      "bicep": "Microsoft.Sql/servers/databases",
+      "pulumi": "azure.sql.Database",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "sql_database",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "sql_server"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "auditing",
+          "message": "Auditing not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable auditing on SQL server"
+        },
+        {
+          "check": "threat_detection",
+          "message": "Threat detection disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable Advanced Threat Protection"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_23",
+        "CKV_AZURE_24"
+      ]
+    },
+    "azure_cosmosdb_account": {
+      "terraform": "azurerm_cosmosdb_account",
+      "arm": "Microsoft.DocumentDB/databaseAccounts",
+      "bicep": "Microsoft.DocumentDB/databaseAccounts",
+      "pulumi": "azure.cosmosdb.Account",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "cosmosdb_account",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "cmk",
+          "message": "Customer-managed key not configured",
+          "severity": "MEDIUM",
+          "recommendation": "Use CMK for encryption"
+        },
+        {
+          "check": "network_filter",
+          "message": "No IP filter configured",
+          "severity": "HIGH",
+          "recommendation": "Configure IP firewall rules"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_100",
+        "CKV_AZURE_101"
+      ]
+    },
+    "azure_postgresql": {
+      "terraform": "azurerm_postgresql_server",
+      "arm": "Microsoft.DBforPostgreSQL/servers",
+      "bicep": "Microsoft.DBforPostgreSQL/servers",
+      "pulumi": "azure.postgresql.Server",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "postgresql_server",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "ssl_enforcement",
+          "message": "SSL enforcement disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable SSL enforcement"
+        },
+        {
+          "check": "firewall",
+          "message": "Allow Azure services enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Restrict firewall rules"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_68",
+        "CKV_AZURE_130"
+      ]
+    },
+    "azure_mysql": {
+      "terraform": "azurerm_mysql_server",
+      "arm": "Microsoft.DBforMySQL/servers",
+      "bicep": "Microsoft.DBforMySQL/servers",
+      "pulumi": "azure.mysql.Server",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "mysql_server",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "ssl_enforcement",
+          "message": "SSL enforcement disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable SSL enforcement"
+        },
+        {
+          "check": "threat_detection",
+          "message": "Threat detection disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable Advanced Threat Protection"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_28",
+        "CKV_AZURE_94"
+      ]
+    },
+    "aws_redshift_cluster": {
+      "terraform": "aws_redshift_cluster",
+      "cloudformation": "AWS::Redshift::Cluster",
+      "pulumi": "aws.redshift.Cluster",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "redshift_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_access",
+          "message": "Publicly accessible",
+          "severity": "CRITICAL",
+          "recommendation": "Set publicly_accessible = false"
+        },
+        {
+          "check": "encryption",
+          "message": "Not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption"
+        },
+        {
+          "check": "logging",
+          "message": "Logging disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable logging"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_64",
+        "CKV_AWS_71",
+        "CKV_AWS_105"
+      ]
+    },
+    "aws_db_proxy": {
+      "terraform": "aws_db_proxy",
+      "cloudformation": "AWS::RDS::DBProxy",
+      "pulumi": "aws.rds.Proxy",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "rds_proxy",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role",
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_323"
+      ]
+    },
+    "aws_qldb_ledger": {
+      "terraform": "aws_qldb_ledger",
+      "cloudformation": "AWS::QLDB::Ledger",
+      "pulumi": "aws.qldb.Ledger",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "qldb_ledger",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "deletion_protection",
+          "message": "Deletion protection disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable deletion_protection"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_170",
+        "CKV_AWS_172"
+      ]
+    },
+    "aws_timestream_database": {
+      "terraform": "aws_timestreamwrite_database",
+      "cloudformation": "AWS::Timestream::Database",
+      "pulumi": "aws.timestreamwrite.Database",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "timestream_database",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_223"
+      ]
+    },
+    "aws_dax_cluster": {
+      "terraform": "aws_dax_cluster",
+      "cloudformation": "AWS::DAX::Cluster",
+      "pulumi": "aws.dax.Cluster",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "dax_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Encryption at rest disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable server_side_encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_47"
+      ]
+    },
+    "azure_mariadb": {
+      "terraform": "azurerm_mariadb_server",
+      "arm": "Microsoft.DBforMariaDB/servers",
+      "bicep": "Microsoft.DBforMariaDB/servers",
+      "pulumi": "azure.mariadb.Server",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "mariadb_server",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "ssl_enforcement",
+          "message": "SSL not enforced",
+          "severity": "HIGH",
+          "recommendation": "Enable SSL enforcement"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_27",
+        "CKV_AZURE_48"
+      ]
+    },
+    "azure_redis_cache": {
+      "terraform": "azurerm_redis_cache",
+      "arm": "Microsoft.Cache/Redis",
+      "bicep": "Microsoft.Cache/Redis",
+      "pulumi": "azure.redis.Cache",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "redis_cache",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "min_tls",
+          "message": "TLS 1.2 not enforced",
+          "severity": "MEDIUM",
+          "recommendation": "Set minimum_tls_version = 1.2"
+        },
+        {
+          "check": "public_network",
+          "message": "Public network access",
+          "severity": "HIGH",
+          "recommendation": "Use private endpoint"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_89",
+        "CKV_AZURE_91"
+      ]
+    },
+    "aws_db_parameter_group": {
+      "terraform": "aws_db_parameter_group",
+      "cloudformation": "AWS::RDS::DBParameterGroup",
+      "pulumi": "aws.rds.ParameterGroup",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "db_parameter_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_db_subnet_group": {
+      "terraform": "aws_db_subnet_group",
+      "cloudformation": "AWS::RDS::DBSubnetGroup",
+      "pulumi": "aws.rds.SubnetGroup",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "db_subnet_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_elasticache_replication_group": {
+      "terraform": "aws_elasticache_replication_group",
+      "cloudformation": "AWS::ElastiCache::ReplicationGroup",
+      "pulumi": "aws.elasticache.ReplicationGroup",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "elasticache_replication_group",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "security_group"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "at_rest_encryption",
+          "message": "At-rest encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption"
+        },
+        {
+          "check": "transit_encryption",
+          "message": "Transit encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable TLS"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_29",
+        "CKV_AWS_30",
+        "CKV_AWS_31"
+      ]
+    },
+    "azure_sql_server": {
+      "terraform": "azurerm_sql_server",
+      "arm": "Microsoft.Sql/servers",
+      "bicep": "Microsoft.Sql/servers",
+      "pulumi": "azure.sql.SqlServer",
+      "resource_type": "database",
+      "cloud_provider": "azure",
+      "canonical_name": "sql_server",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "aad_admin",
+          "message": "Azure AD admin not configured",
+          "severity": "HIGH",
+          "recommendation": "Configure Azure AD administrator"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_23",
+        "CKV_AZURE_24"
+      ]
+    },
+    "aws_rds_cluster_parameter_group": {
+      "terraform": "aws_rds_cluster_parameter_group",
+      "cloudformation": "AWS::RDS::DBClusterParameterGroup",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "rds_cluster_parameter_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_db_instance_automated_backups_replication": {
+      "terraform": "aws_db_instance_automated_backups_replication",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "rds_backup_replication",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_elasticache_subnet_group": {
+      "terraform": "aws_elasticache_subnet_group",
+      "cloudformation": "AWS::ElastiCache::SubnetGroup",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "elasticache_subnet_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_dynamodb_table_replica": {
+      "terraform": "aws_dynamodb_table_replica",
+      "resource_type": "database",
+      "cloud_provider": "aws",
+      "canonical_name": "dynamodb_replica",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "dynamodb_table"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "networking": {
+    "aws_vpc": {
+      "terraform": "aws_vpc",
+      "cloudformation": "AWS::EC2::VPC",
+      "pulumi": "aws.ec2.Vpc",
+      "cdk": "ec2.Vpc",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "vpc",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "flow_logs",
+          "message": "VPC Flow Logs not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable VPC Flow Logs"
+        },
+        {
+          "check": "default_security_group",
+          "message": "Default SG not restricted",
+          "severity": "LOW",
+          "recommendation": "Restrict default security group"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_178",
+        "CKV2_AWS_11",
+        "CKV2_AWS_12"
+      ]
+    },
+    "aws_subnet": {
+      "terraform": "aws_subnet",
+      "cloudformation": "AWS::EC2::Subnet",
+      "pulumi": "aws.ec2.Subnet",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "subnet",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_ip",
+          "message": "Auto-assign public IP enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Disable for private subnets"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_130"
+      ]
+    },
+    "aws_security_group": {
+      "terraform": "aws_security_group",
+      "cloudformation": "AWS::EC2::SecurityGroup",
+      "pulumi": "aws.ec2.SecurityGroup",
+      "cdk": "ec2.SecurityGroup",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "security_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "unrestricted_ingress",
+          "message": "Allows 0.0.0.0/0 ingress",
+          "severity": "CRITICAL",
+          "recommendation": "Restrict to specific IPs"
+        },
+        {
+          "check": "description",
+          "message": "No description provided",
+          "severity": "LOW",
+          "recommendation": "Add description for audit trail"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_23",
+        "CKV_AWS_24",
+        "CKV_AWS_25",
+        "CKV_AWS_260"
+      ]
+    },
+    "aws_lb": {
+      "terraform": "aws_lb",
+      "cloudformation": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "pulumi": "aws.lb.LoadBalancer",
+      "cdk": "elbv2.ApplicationLoadBalancer",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "load_balancer",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": [
+          "security_group"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "access_logs",
+          "message": "Access logs disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable access logs to S3"
+        },
+        {
+          "check": "deletion_protection",
+          "message": "Deletion protection disabled",
+          "severity": "LOW",
+          "recommendation": "Enable deletion protection"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_91",
+        "CKV_AWS_131",
+        "CKV2_AWS_28"
+      ]
+    },
+    "aws_alb": {
+      "terraform": "aws_alb",
+      "cloudformation": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "pulumi": "aws.alb.LoadBalancer",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "application_load_balancer",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "security_group"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "waf",
+          "message": "WAF not associated",
+          "severity": "MEDIUM",
+          "recommendation": "Associate WAF WebACL"
+        },
+        {
+          "check": "drop_invalid_headers",
+          "message": "Invalid header drop disabled",
+          "severity": "LOW",
+          "recommendation": "Enable drop_invalid_header_fields"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_91",
+        "CKV_AWS_103",
+        "CKV2_AWS_20"
+      ]
+    },
+    "aws_cloudfront_distribution": {
+      "terraform": "aws_cloudfront_distribution",
+      "cloudformation": "AWS::CloudFront::Distribution",
+      "pulumi": "aws.cloudfront.Distribution",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "cloudfront_distribution",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "logging",
+          "message": "Logging not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable access logging"
+        },
+        {
+          "check": "waf",
+          "message": "WAF not associated",
+          "severity": "HIGH",
+          "recommendation": "Associate WAF WebACL"
+        },
+        {
+          "check": "geo_restriction",
+          "message": "No geo restrictions",
+          "severity": "LOW",
+          "recommendation": "Consider geo restrictions"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_34",
+        "CKV_AWS_68",
+        "CKV_AWS_86"
+      ]
+    },
+    "aws_route53_zone": {
+      "terraform": "aws_route53_zone",
+      "cloudformation": "AWS::Route53::HostedZone",
+      "pulumi": "aws.route53.Zone",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "route53_zone",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "dnssec",
+          "message": "DNSSEC not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable DNSSEC"
+        }
+      ],
+      "checkov_rules": [
+        "CKV2_AWS_38",
+        "CKV2_AWS_39"
+      ]
+    },
+    "aws_api_gateway_rest_api": {
+      "terraform": "aws_api_gateway_rest_api",
+      "cloudformation": "AWS::ApiGateway::RestApi",
+      "pulumi": "aws.apigateway.RestApi",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "api_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "waf",
+          "message": "WAF not configured",
+          "severity": "HIGH",
+          "recommendation": "Associate WAF WebACL"
+        },
+        {
+          "check": "access_logging",
+          "message": "Access logging disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable access logging"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_73",
+        "CKV_AWS_120",
+        "CKV2_AWS_4"
+      ]
+    },
+    "azure_virtual_network": {
+      "terraform": "azurerm_virtual_network",
+      "arm": "Microsoft.Network/virtualNetworks",
+      "bicep": "Microsoft.Network/virtualNetworks",
+      "pulumi": "azure.network.VirtualNetwork",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "virtual_network",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "ddos_protection",
+          "message": "DDoS protection not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable DDoS Protection Standard"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_183"
+      ]
+    },
+    "azure_subnet": {
+      "terraform": "azurerm_subnet",
+      "arm": "Microsoft.Network/virtualNetworks/subnets",
+      "bicep": "Microsoft.Network/virtualNetworks/subnets",
+      "pulumi": "azure.network.Subnet",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "subnet",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "virtual_network"
+        ],
+        "recommended": [
+          "nsg"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AZURE_97"
+      ]
+    },
+    "azure_nsg": {
+      "terraform": "azurerm_network_security_group",
+      "arm": "Microsoft.Network/networkSecurityGroups",
+      "bicep": "Microsoft.Network/networkSecurityGroups",
+      "pulumi": "azure.network.NetworkSecurityGroup",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "network_security_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "unrestricted_ssh",
+          "message": "SSH open to internet",
+          "severity": "CRITICAL",
+          "recommendation": "Restrict SSH access"
+        },
+        {
+          "check": "unrestricted_rdp",
+          "message": "RDP open to internet",
+          "severity": "CRITICAL",
+          "recommendation": "Restrict RDP access"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_9",
+        "CKV_AZURE_10",
+        "CKV_AZURE_77"
+      ]
+    },
+    "azure_load_balancer": {
+      "terraform": "azurerm_lb",
+      "arm": "Microsoft.Network/loadBalancers",
+      "bicep": "Microsoft.Network/loadBalancers",
+      "pulumi": "azure.network.LoadBalancer",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "load_balancer",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "standard_sku",
+          "message": "Basic SKU in use",
+          "severity": "MEDIUM",
+          "recommendation": "Use Standard SKU for production"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_93"
+      ]
+    },
+    "azure_application_gateway": {
+      "terraform": "azurerm_application_gateway",
+      "arm": "Microsoft.Network/applicationGateways",
+      "bicep": "Microsoft.Network/applicationGateways",
+      "pulumi": "azure.network.ApplicationGateway",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "application_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "public_ip"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "waf",
+          "message": "WAF not enabled",
+          "severity": "HIGH",
+          "recommendation": "Enable WAF with Prevention mode"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_120",
+        "CKV_AZURE_122"
+      ]
+    },
+    "azure_front_door": {
+      "terraform": "azurerm_frontdoor",
+      "arm": "Microsoft.Network/frontDoors",
+      "bicep": "Microsoft.Network/frontDoors",
+      "pulumi": "azure.network.FrontDoor",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "front_door",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "waf_policy",
+          "message": "WAF policy not associated",
+          "severity": "HIGH",
+          "recommendation": "Associate WAF policy"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_133"
+      ]
+    },
+    "aws_nat_gateway": {
+      "terraform": "aws_nat_gateway",
+      "cloudformation": "AWS::EC2::NatGateway",
+      "pulumi": "aws.ec2.NatGateway",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "nat_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "eip"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_internet_gateway": {
+      "terraform": "aws_internet_gateway",
+      "cloudformation": "AWS::EC2::InternetGateway",
+      "pulumi": "aws.ec2.InternetGateway",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "internet_gateway",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_vpn_gateway": {
+      "terraform": "aws_vpn_gateway",
+      "cloudformation": "AWS::EC2::VPNGateway",
+      "pulumi": "aws.ec2.VpnGateway",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "vpn_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_customer_gateway": {
+      "terraform": "aws_customer_gateway",
+      "cloudformation": "AWS::EC2::CustomerGateway",
+      "pulumi": "aws.ec2.CustomerGateway",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "customer_gateway",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_transit_gateway": {
+      "terraform": "aws_ec2_transit_gateway",
+      "cloudformation": "AWS::EC2::TransitGateway",
+      "pulumi": "aws.ec2transitgateway.TransitGateway",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "transit_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "auto_accept",
+          "message": "Auto-accept enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Disable auto_accept_shared_attachments"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_184"
+      ]
+    },
+    "aws_route_table": {
+      "terraform": "aws_route_table",
+      "cloudformation": "AWS::EC2::RouteTable",
+      "pulumi": "aws.ec2.RouteTable",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "route_table",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_network_acl": {
+      "terraform": "aws_network_acl",
+      "cloudformation": "AWS::EC2::NetworkAcl",
+      "pulumi": "aws.ec2.NetworkAcl",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "network_acl",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "unrestricted_ingress",
+          "message": "Unrestricted ingress",
+          "severity": "HIGH",
+          "recommendation": "Restrict network ACL rules"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_229",
+        "CKV_AWS_230",
+        "CKV_AWS_231",
+        "CKV_AWS_232"
+      ]
+    },
+    "aws_eip": {
+      "terraform": "aws_eip",
+      "cloudformation": "AWS::EC2::EIP",
+      "pulumi": "aws.ec2.Eip",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "elastic_ip",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_api_gateway_v2_api": {
+      "terraform": "aws_apigatewayv2_api",
+      "cloudformation": "AWS::ApiGatewayV2::Api",
+      "pulumi": "aws.apigatewayv2.Api",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "api_gateway_v2",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "access_logging",
+          "message": "Access logging disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable access logging"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_76"
+      ]
+    },
+    "aws_global_accelerator": {
+      "terraform": "aws_globalaccelerator_accelerator",
+      "cloudformation": "AWS::GlobalAccelerator::Accelerator",
+      "pulumi": "aws.globalaccelerator.Accelerator",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "global_accelerator",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "flow_logs",
+          "message": "Flow logs disabled",
+          "severity": "LOW",
+          "recommendation": "Enable flow logs"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_75"
+      ]
+    },
+    "azure_public_ip": {
+      "terraform": "azurerm_public_ip",
+      "arm": "Microsoft.Network/publicIPAddresses",
+      "bicep": "Microsoft.Network/publicIPAddresses",
+      "pulumi": "azure.network.PublicIp",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "public_ip",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "ddos_protection",
+          "message": "No DDoS protection",
+          "severity": "MEDIUM",
+          "recommendation": "Consider DDoS protection plan"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_119"
+      ]
+    },
+    "azure_vpn_gateway": {
+      "terraform": "azurerm_virtual_network_gateway",
+      "arm": "Microsoft.Network/virtualNetworkGateways",
+      "bicep": "Microsoft.Network/virtualNetworkGateways",
+      "pulumi": "azure.network.VirtualNetworkGateway",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "vpn_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "public_ip"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_expressroute": {
+      "terraform": "azurerm_express_route_circuit",
+      "arm": "Microsoft.Network/expressRouteCircuits",
+      "bicep": "Microsoft.Network/expressRouteCircuits",
+      "pulumi": "azure.network.ExpressRouteCircuit",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "expressroute",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_firewall": {
+      "terraform": "azurerm_firewall",
+      "arm": "Microsoft.Network/azureFirewalls",
+      "bicep": "Microsoft.Network/azureFirewalls",
+      "pulumi": "azure.network.Firewall",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "firewall",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "public_ip"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "dns_proxy",
+          "message": "DNS proxy not enabled",
+          "severity": "LOW",
+          "recommendation": "Enable DNS proxy"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_216"
+      ]
+    },
+    "azure_bastion_host": {
+      "terraform": "azurerm_bastion_host",
+      "arm": "Microsoft.Network/bastionHosts",
+      "bicep": "Microsoft.Network/bastionHosts",
+      "pulumi": "azure.network.BastionHost",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "bastion_host",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "public_ip"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_vpc_endpoint": {
+      "terraform": "aws_vpc_endpoint",
+      "cloudformation": "AWS::EC2::VPCEndpoint",
+      "pulumi": "aws.ec2.VpcEndpoint",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "vpc_endpoint",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": [
+          "subnet",
+          "security_group"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_lb_target_group": {
+      "terraform": "aws_lb_target_group",
+      "cloudformation": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "pulumi": "aws.lb.TargetGroup",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "target_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_lb_listener": {
+      "terraform": "aws_lb_listener",
+      "cloudformation": "AWS::ElasticLoadBalancingV2::Listener",
+      "pulumi": "aws.lb.Listener",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "lb_listener",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "load_balancer",
+          "target_group"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "https",
+          "message": "Not using HTTPS",
+          "severity": "HIGH",
+          "recommendation": "Use HTTPS protocol"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_2",
+        "CKV_AWS_103"
+      ]
+    },
+    "aws_route53_record": {
+      "terraform": "aws_route53_record",
+      "cloudformation": "AWS::Route53::RecordSet",
+      "pulumi": "aws.route53.Record",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "route53_record",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "route53_zone"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_network_interface": {
+      "terraform": "azurerm_network_interface",
+      "arm": "Microsoft.Network/networkInterfaces",
+      "bicep": "Microsoft.Network/networkInterfaces",
+      "pulumi": "azure.network.NetworkInterface",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "network_interface",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_ip",
+          "message": "Public IP assigned",
+          "severity": "MEDIUM",
+          "recommendation": "Use private IP only"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_118"
+      ]
+    },
+    "azure_private_endpoint": {
+      "terraform": "azurerm_private_endpoint",
+      "arm": "Microsoft.Network/privateEndpoints",
+      "bicep": "Microsoft.Network/privateEndpoints",
+      "pulumi": "azure.network.PrivateEndpoint",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "private_endpoint",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_eip_association": {
+      "terraform": "aws_eip_association",
+      "cloudformation": "AWS::EC2::EIPAssociation",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "eip_association",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "eip"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_network_interface": {
+      "terraform": "aws_network_interface",
+      "cloudformation": "AWS::EC2::NetworkInterface",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "network_interface",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_route53_resolver_endpoint": {
+      "terraform": "aws_route53_resolver_endpoint",
+      "cloudformation": "AWS::Route53Resolver::ResolverEndpoint",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "route53_resolver_endpoint",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_vpc_dhcp_options": {
+      "terraform": "aws_vpc_dhcp_options",
+      "cloudformation": "AWS::EC2::DHCPOptions",
+      "resource_type": "networking",
+      "cloud_provider": "aws",
+      "canonical_name": "dhcp_options",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_nat_gateway": {
+      "terraform": "azurerm_nat_gateway",
+      "arm": "Microsoft.Network/natGateways",
+      "bicep": "Microsoft.Network/natGateways",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "nat_gateway",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_lb_backend_address_pool": {
+      "terraform": "azurerm_lb_backend_address_pool",
+      "resource_type": "networking",
+      "cloud_provider": "azure",
+      "canonical_name": "lb_backend_pool",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "load_balancer"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "security": {
+    "aws_iam_role": {
+      "terraform": "aws_iam_role",
+      "cloudformation": "AWS::IAM::Role",
+      "pulumi": "aws.iam.Role",
+      "cdk": "iam.Role",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "iam_role",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "trust_policy",
+          "message": "Overly permissive trust policy",
+          "severity": "HIGH",
+          "recommendation": "Restrict trust policy to specific principals"
+        },
+        {
+          "check": "permissions_boundary",
+          "message": "No permissions boundary",
+          "severity": "LOW",
+          "recommendation": "Consider permissions boundary"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_60",
+        "CKV_AWS_61"
+      ]
+    },
+    "aws_iam_policy": {
+      "terraform": "aws_iam_policy",
+      "cloudformation": "AWS::IAM::Policy",
+      "pulumi": "aws.iam.Policy",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "iam_policy",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "wildcard_actions",
+          "message": "Uses wildcard actions",
+          "severity": "HIGH",
+          "recommendation": "Use specific actions instead of *"
+        },
+        {
+          "check": "wildcard_resources",
+          "message": "Uses wildcard resources",
+          "severity": "MEDIUM",
+          "recommendation": "Scope to specific resources"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_108",
+        "CKV_AWS_109",
+        "CKV_AWS_110",
+        "CKV_AWS_111"
+      ]
+    },
+    "aws_iam_user": {
+      "terraform": "aws_iam_user",
+      "cloudformation": "AWS::IAM::User",
+      "pulumi": "aws.iam.User",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "iam_user",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "console_access",
+          "message": "Console access enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Use IAM roles with SSO instead"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_273"
+      ]
+    },
+    "aws_kms_key": {
+      "terraform": "aws_kms_key",
+      "cloudformation": "AWS::KMS::Key",
+      "pulumi": "aws.kms.Key",
+      "cdk": "kms.Key",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "kms_key",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "rotation",
+          "message": "Key rotation not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable automatic key rotation"
+        },
+        {
+          "check": "key_policy",
+          "message": "Overly permissive key policy",
+          "severity": "HIGH",
+          "recommendation": "Restrict key policy"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_7",
+        "CKV_AWS_33"
+      ]
+    },
+    "aws_secrets_manager_secret": {
+      "terraform": "aws_secretsmanager_secret",
+      "cloudformation": "AWS::SecretsManager::Secret",
+      "pulumi": "aws.secretsmanager.Secret",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "secrets_manager_secret",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "kms_encryption",
+          "message": "Not encrypted with KMS CMK",
+          "severity": "MEDIUM",
+          "recommendation": "Use KMS CMK for encryption"
+        },
+        {
+          "check": "rotation",
+          "message": "Rotation not configured",
+          "severity": "MEDIUM",
+          "recommendation": "Enable automatic rotation"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_149"
+      ]
+    },
+    "aws_wafv2_web_acl": {
+      "terraform": "aws_wafv2_web_acl",
+      "cloudformation": "AWS::WAFv2::WebACL",
+      "pulumi": "aws.wafv2.WebAcl",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "wafv2_web_acl",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "logging",
+          "message": "Logging not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable logging to CloudWatch or S3"
+        }
+      ],
+      "checkov_rules": [
+        "CKV2_AWS_31"
+      ]
+    },
+    "aws_guardduty_detector": {
+      "terraform": "aws_guardduty_detector",
+      "cloudformation": "AWS::GuardDuty::Detector",
+      "pulumi": "aws.guardduty.Detector",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "guardduty_detector",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "enabled",
+          "message": "GuardDuty not enabled",
+          "severity": "HIGH",
+          "recommendation": "Enable GuardDuty"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_238"
+      ]
+    },
+    "azure_key_vault": {
+      "terraform": "azurerm_key_vault",
+      "arm": "Microsoft.KeyVault/vaults",
+      "bicep": "Microsoft.KeyVault/vaults",
+      "pulumi": "azure.keyvault.KeyVault",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "key_vault",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "purge_protection",
+          "message": "Purge protection not enabled",
+          "severity": "HIGH",
+          "recommendation": "Enable purge_protection_enabled"
+        },
+        {
+          "check": "network_acls",
+          "message": "No network ACLs configured",
+          "severity": "MEDIUM",
+          "recommendation": "Configure network ACLs"
+        },
+        {
+          "check": "soft_delete",
+          "message": "Soft delete not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable soft_delete_enabled"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_42",
+        "CKV_AZURE_109",
+        "CKV_AZURE_110",
+        "CKV_AZURE_189"
+      ]
+    },
+    "azure_managed_identity": {
+      "terraform": "azurerm_user_assigned_identity",
+      "arm": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "bicep": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "pulumi": "azure.authorization.UserAssignedIdentity",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "managed_identity",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_iam_group": {
+      "terraform": "aws_iam_group",
+      "cloudformation": "AWS::IAM::Group",
+      "pulumi": "aws.iam.Group",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "iam_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_acm_certificate": {
+      "terraform": "aws_acm_certificate",
+      "cloudformation": "AWS::CertificateManager::Certificate",
+      "pulumi": "aws.acm.Certificate",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "acm_certificate",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "validation",
+          "message": "DNS validation recommended",
+          "severity": "LOW",
+          "recommendation": "Use DNS validation"
+        },
+        {
+          "check": "transparency_logging",
+          "message": "CT logging disabled",
+          "severity": "LOW",
+          "recommendation": "Enable certificate transparency logging"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_293"
+      ]
+    },
+    "aws_securityhub_account": {
+      "terraform": "aws_securityhub_account",
+      "cloudformation": "AWS::SecurityHub::Hub",
+      "pulumi": "aws.securityhub.Account",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "security_hub",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "enabled",
+          "message": "Security Hub not enabled",
+          "severity": "HIGH",
+          "recommendation": "Enable Security Hub"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_inspector_assessment_template": {
+      "terraform": "aws_inspector_assessment_template",
+      "cloudformation": "AWS::Inspector::AssessmentTemplate",
+      "pulumi": "aws.inspector.AssessmentTemplate",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "inspector_template",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_shield_protection": {
+      "terraform": "aws_shield_protection",
+      "cloudformation": "AWS::Shield::Protection",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "shield_protection",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_directory_service_directory": {
+      "terraform": "aws_directory_service_directory",
+      "cloudformation": "AWS::DirectoryService::MicrosoftAD",
+      "pulumi": "aws.directoryservice.Directory",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "directory_service",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet",
+          "vpc"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_security_center_subscription_pricing": {
+      "terraform": "azurerm_security_center_subscription_pricing",
+      "arm": "Microsoft.Security/pricings",
+      "bicep": "Microsoft.Security/pricings",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "security_center_pricing",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "standard_tier",
+          "message": "Not using Standard tier",
+          "severity": "HIGH",
+          "recommendation": "Upgrade to Standard tier"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_19",
+        "CKV_AZURE_20",
+        "CKV_AZURE_21",
+        "CKV_AZURE_22"
+      ]
+    },
+    "azure_sentinel_workspace": {
+      "terraform": "azurerm_log_analytics_solution",
+      "arm": "Microsoft.OperationsManagement/solutions",
+      "bicep": "Microsoft.OperationsManagement/solutions",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "sentinel",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "log_analytics_workspace"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_iam_instance_profile": {
+      "terraform": "aws_iam_instance_profile",
+      "cloudformation": "AWS::IAM::InstanceProfile",
+      "pulumi": "aws.iam.InstanceProfile",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "iam_instance_profile",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_kms_alias": {
+      "terraform": "aws_kms_alias",
+      "cloudformation": "AWS::KMS::Alias",
+      "pulumi": "aws.kms.Alias",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "kms_alias",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "kms_key"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_role_assignment": {
+      "terraform": "azurerm_role_assignment",
+      "arm": "Microsoft.Authorization/roleAssignments",
+      "bicep": "Microsoft.Authorization/roleAssignments",
+      "pulumi": "azure.authorization.Assignment",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "role_assignment",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_key_vault_secret": {
+      "terraform": "azurerm_key_vault_secret",
+      "arm": "Microsoft.KeyVault/vaults/secrets",
+      "bicep": "Microsoft.KeyVault/vaults/secrets",
+      "pulumi": "azure.keyvault.Secret",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "key_vault_secret",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "key_vault"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "expiration",
+          "message": "No expiration date",
+          "severity": "LOW",
+          "recommendation": "Set expiration_date"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_112"
+      ]
+    },
+    "aws_iam_account_password_policy": {
+      "terraform": "aws_iam_account_password_policy",
+      "cloudformation": "AWS::IAM::ManagedPolicy",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "password_policy",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "password_strength",
+          "message": "Weak password policy",
+          "severity": "HIGH",
+          "recommendation": "Enforce strong password requirements"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_iam_saml_provider": {
+      "terraform": "aws_iam_saml_provider",
+      "cloudformation": "AWS::IAM::SAMLProvider",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "saml_provider",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_config_remediation_configuration": {
+      "terraform": "aws_config_remediation_configuration",
+      "resource_type": "security",
+      "cloud_provider": "aws",
+      "canonical_name": "config_remediation",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_user_assigned_identity": {
+      "terraform": "azurerm_user_assigned_identity",
+      "arm": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "bicep": "Microsoft.ManagedIdentity/userAssignedIdentities",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "user_assigned_identity",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_key_vault_certificate": {
+      "terraform": "azurerm_key_vault_certificate",
+      "arm": "Microsoft.KeyVault/vaults/certificates",
+      "bicep": "Microsoft.KeyVault/vaults/certificates",
+      "resource_type": "security",
+      "cloud_provider": "azure",
+      "canonical_name": "key_vault_certificate",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "key_vault"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "monitoring": {
+    "aws_cloudwatch_log_group": {
+      "terraform": "aws_cloudwatch_log_group",
+      "cloudformation": "AWS::Logs::LogGroup",
+      "pulumi": "aws.cloudwatch.LogGroup",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "cloudwatch_log_group",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "kms_encryption",
+          "message": "Not encrypted with KMS",
+          "severity": "MEDIUM",
+          "recommendation": "Enable KMS encryption"
+        },
+        {
+          "check": "retention",
+          "message": "No retention policy",
+          "severity": "LOW",
+          "recommendation": "Set retention_in_days"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_66",
+        "CKV_AWS_158"
+      ]
+    },
+    "aws_cloudtrail": {
+      "terraform": "aws_cloudtrail",
+      "cloudformation": "AWS::CloudTrail::Trail",
+      "pulumi": "aws.cloudtrail.Trail",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "cloudtrail",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": [
+          "cloudwatch_log_group",
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "log_validation",
+          "message": "Log validation not enabled",
+          "severity": "HIGH",
+          "recommendation": "Enable log file validation"
+        },
+        {
+          "check": "s3_encryption",
+          "message": "S3 bucket not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Enable KMS encryption"
+        },
+        {
+          "check": "multi_region",
+          "message": "Not multi-region",
+          "severity": "MEDIUM",
+          "recommendation": "Enable is_multi_region_trail"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_35",
+        "CKV_AWS_36",
+        "CKV_AWS_67",
+        "CKV_AWS_252"
+      ]
+    },
+    "aws_config_configuration_recorder": {
+      "terraform": "aws_config_configuration_recorder",
+      "cloudformation": "AWS::Config::ConfigurationRecorder",
+      "pulumi": "aws.cfg.Recorder",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "config_recorder",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_254"
+      ]
+    },
+    "aws_sns_topic": {
+      "terraform": "aws_sns_topic",
+      "cloudformation": "AWS::SNS::Topic",
+      "pulumi": "aws.sns.Topic",
+      "cdk": "sns.Topic",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "sns_topic",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "kms_encryption",
+          "message": "Not encrypted with KMS",
+          "severity": "MEDIUM",
+          "recommendation": "Enable KMS encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_26"
+      ]
+    },
+    "azure_log_analytics_workspace": {
+      "terraform": "azurerm_log_analytics_workspace",
+      "arm": "Microsoft.OperationalInsights/workspaces",
+      "bicep": "Microsoft.OperationalInsights/workspaces",
+      "pulumi": "azure.operationalinsights.AnalyticsWorkspace",
+      "resource_type": "monitoring",
+      "cloud_provider": "azure",
+      "canonical_name": "log_analytics_workspace",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "retention",
+          "message": "Low retention period",
+          "severity": "LOW",
+          "recommendation": "Set retention_in_days >= 90"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_38"
+      ]
+    },
+    "azure_monitor_diagnostic_setting": {
+      "terraform": "azurerm_monitor_diagnostic_setting",
+      "arm": "Microsoft.Insights/diagnosticSettings",
+      "bicep": "Microsoft.Insights/diagnosticSettings",
+      "pulumi": "azure.monitoring.DiagnosticSetting",
+      "resource_type": "monitoring",
+      "cloud_provider": "azure",
+      "canonical_name": "diagnostic_setting",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_cloudwatch_metric_alarm": {
+      "terraform": "aws_cloudwatch_metric_alarm",
+      "cloudformation": "AWS::CloudWatch::Alarm",
+      "pulumi": "aws.cloudwatch.MetricAlarm",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "cloudwatch_alarm",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_cloudwatch_dashboard": {
+      "terraform": "aws_cloudwatch_dashboard",
+      "cloudformation": "AWS::CloudWatch::Dashboard",
+      "pulumi": "aws.cloudwatch.Dashboard",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "cloudwatch_dashboard",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_xray_sampling_rule": {
+      "terraform": "aws_xray_sampling_rule",
+      "cloudformation": "AWS::XRay::SamplingRule",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "xray_sampling_rule",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_application_insights": {
+      "terraform": "azurerm_application_insights",
+      "arm": "Microsoft.Insights/components",
+      "bicep": "Microsoft.Insights/components",
+      "pulumi": "azure.appinsights.Insights",
+      "resource_type": "monitoring",
+      "cloud_provider": "azure",
+      "canonical_name": "application_insights",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "log_analytics_workspace"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_monitor_action_group": {
+      "terraform": "azurerm_monitor_action_group",
+      "arm": "Microsoft.Insights/actionGroups",
+      "bicep": "Microsoft.Insights/actionGroups",
+      "pulumi": "azure.monitoring.ActionGroup",
+      "resource_type": "monitoring",
+      "cloud_provider": "azure",
+      "canonical_name": "action_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_sns_topic_subscription": {
+      "terraform": "aws_sns_topic_subscription",
+      "cloudformation": "AWS::SNS::Subscription",
+      "pulumi": "aws.sns.TopicSubscription",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "sns_subscription",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "sns_topic"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_monitor_metric_alert": {
+      "terraform": "azurerm_monitor_metric_alert",
+      "arm": "Microsoft.Insights/metricAlerts",
+      "bicep": "Microsoft.Insights/metricAlerts",
+      "pulumi": "azure.monitoring.MetricAlert",
+      "resource_type": "monitoring",
+      "cloud_provider": "azure",
+      "canonical_name": "metric_alert",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "action_group"
+        ]
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_config_delivery_channel": {
+      "terraform": "aws_config_delivery_channel",
+      "cloudformation": "AWS::Config::DeliveryChannel",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "config_delivery_channel",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_cloudwatch_composite_alarm": {
+      "terraform": "aws_cloudwatch_composite_alarm",
+      "cloudformation": "AWS::CloudWatch::CompositeAlarm",
+      "resource_type": "monitoring",
+      "cloud_provider": "aws",
+      "canonical_name": "composite_alarm",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_monitor_private_link_scope": {
+      "terraform": "azurerm_monitor_private_link_scope",
+      "arm": "Microsoft.Insights/privateLinkScopes",
+      "bicep": "Microsoft.Insights/privateLinkScopes",
+      "resource_type": "monitoring",
+      "cloud_provider": "azure",
+      "canonical_name": "monitor_private_link_scope",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "analytics": {
+    "aws_kinesis_stream": {
+      "terraform": "aws_kinesis_stream",
+      "cloudformation": "AWS::Kinesis::Stream",
+      "pulumi": "aws.kinesis.Stream",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "kinesis_stream",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Server-side encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption_type = KMS"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_43",
+        "CKV_AWS_185"
+      ]
+    },
+    "aws_kinesis_firehose_delivery_stream": {
+      "terraform": "aws_kinesis_firehose_delivery_stream",
+      "cloudformation": "AWS::KinesisFirehose::DeliveryStream",
+      "pulumi": "aws.kinesis.FirehoseDeliveryStream",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "kinesis_firehose",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "s3_bucket"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Server-side encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable SSE"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_189"
+      ]
+    },
+    "aws_emr_cluster": {
+      "terraform": "aws_emr_cluster",
+      "cloudformation": "AWS::EMR::Cluster",
+      "pulumi": "aws.emr.Cluster",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "emr_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption_at_rest",
+          "message": "At-rest encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable at-rest encryption"
+        },
+        {
+          "check": "encryption_in_transit",
+          "message": "In-transit encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable in-transit encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_66"
+      ]
+    },
+    "aws_athena_workgroup": {
+      "terraform": "aws_athena_workgroup",
+      "cloudformation": "AWS::Athena::WorkGroup",
+      "pulumi": "aws.athena.Workgroup",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "athena_workgroup",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Result encryption not configured",
+          "severity": "MEDIUM",
+          "recommendation": "Enable result encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_82"
+      ]
+    },
+    "aws_glue_catalog_database": {
+      "terraform": "aws_glue_catalog_database",
+      "cloudformation": "AWS::Glue::Database",
+      "pulumi": "aws.glue.CatalogDatabase",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "glue_database",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Catalog encryption disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable catalog encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_94"
+      ]
+    },
+    "azure_synapse_workspace": {
+      "terraform": "azurerm_synapse_workspace",
+      "arm": "Microsoft.Synapse/workspaces",
+      "bicep": "Microsoft.Synapse/workspaces",
+      "pulumi": "azure.synapse.Workspace",
+      "resource_type": "analytics",
+      "cloud_provider": "azure",
+      "canonical_name": "synapse_workspace",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "storage_account"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "managed_vnet",
+          "message": "Managed VNet not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable managed virtual network"
+        },
+        {
+          "check": "aad_admin",
+          "message": "Azure AD admin not set",
+          "severity": "HIGH",
+          "recommendation": "Configure Azure AD administrator"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_58"
+      ]
+    },
+    "azure_data_factory": {
+      "terraform": "azurerm_data_factory",
+      "arm": "Microsoft.DataFactory/factories",
+      "bicep": "Microsoft.DataFactory/factories",
+      "pulumi": "azure.datafactory.Factory",
+      "resource_type": "analytics",
+      "cloud_provider": "azure",
+      "canonical_name": "data_factory",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_network",
+          "message": "Public network access enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Disable public network access"
+        },
+        {
+          "check": "managed_identity",
+          "message": "No managed identity",
+          "severity": "LOW",
+          "recommendation": "Enable managed identity"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_103",
+        "CKV_AZURE_104"
+      ]
+    },
+    "aws_quicksight_user": {
+      "terraform": "aws_quicksight_user",
+      "cloudformation": "AWS::QuickSight::User",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "quicksight_user",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_data_pipeline": {
+      "terraform": "aws_datapipeline_pipeline",
+      "cloudformation": "AWS::DataPipeline::Pipeline",
+      "pulumi": "aws.datapipeline.Pipeline",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "data_pipeline",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_msk_cluster": {
+      "terraform": "aws_msk_cluster",
+      "cloudformation": "AWS::MSK::Cluster",
+      "pulumi": "aws.msk.Cluster",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "msk_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption_in_transit",
+          "message": "Encryption in transit disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable TLS encryption"
+        },
+        {
+          "check": "encryption_at_rest",
+          "message": "Encryption at rest disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable KMS encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_80",
+        "CKV_AWS_81"
+      ]
+    },
+    "aws_elasticsearch_domain": {
+      "terraform": "aws_elasticsearch_domain",
+      "cloudformation": "AWS::Elasticsearch::Domain",
+      "pulumi": "aws.elasticsearch.Domain",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "elasticsearch_domain",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption_at_rest",
+          "message": "Encryption at rest disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable encryption"
+        },
+        {
+          "check": "node_to_node_encryption",
+          "message": "Node-to-node encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable node-to-node encryption"
+        },
+        {
+          "check": "vpc_only",
+          "message": "Not in VPC",
+          "severity": "CRITICAL",
+          "recommendation": "Deploy within VPC"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_5",
+        "CKV_AWS_83",
+        "CKV_AWS_84",
+        "CKV_AWS_137"
+      ]
+    },
+    "azure_hdinsight_cluster": {
+      "terraform": "azurerm_hdinsight_hadoop_cluster",
+      "arm": "Microsoft.HDInsight/clusters",
+      "bicep": "Microsoft.HDInsight/clusters",
+      "pulumi": "azure.hdinsight.HadoopCluster",
+      "resource_type": "analytics",
+      "cloud_provider": "azure",
+      "canonical_name": "hdinsight_cluster",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "storage_account"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Encryption at host not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable encryption at host"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_75"
+      ]
+    },
+    "azure_databricks_workspace": {
+      "terraform": "azurerm_databricks_workspace",
+      "arm": "Microsoft.Databricks/workspaces",
+      "bicep": "Microsoft.Databricks/workspaces",
+      "pulumi": "azure.databricks.Workspace",
+      "resource_type": "analytics",
+      "cloud_provider": "azure",
+      "canonical_name": "databricks_workspace",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "no_public_ip",
+          "message": "Public IP enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Disable public IP"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_158"
+      ]
+    },
+    "azure_stream_analytics_job": {
+      "terraform": "azurerm_stream_analytics_job",
+      "arm": "Microsoft.StreamAnalytics/streamingjobs",
+      "bicep": "Microsoft.StreamAnalytics/streamingjobs",
+      "resource_type": "analytics",
+      "cloud_provider": "azure",
+      "canonical_name": "stream_analytics_job",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_glue_crawler": {
+      "terraform": "aws_glue_crawler",
+      "cloudformation": "AWS::Glue::Crawler",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "glue_crawler",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_glue_job": {
+      "terraform": "aws_glue_job",
+      "cloudformation": "AWS::Glue::Job",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "glue_job",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_lakeformation_permissions": {
+      "terraform": "aws_lakeformation_permissions",
+      "resource_type": "analytics",
+      "cloud_provider": "aws",
+      "canonical_name": "lakeformation_permissions",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  },
+  "ml": {
+    "aws_sagemaker_notebook_instance": {
+      "terraform": "aws_sagemaker_notebook_instance",
+      "cloudformation": "AWS::SageMaker::NotebookInstance",
+      "pulumi": "aws.sagemaker.NotebookInstance",
+      "resource_type": "ml",
+      "cloud_provider": "aws",
+      "canonical_name": "sagemaker_notebook",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "iam_role",
+          "kms_key",
+          "subnet"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "direct_internet",
+          "message": "Direct internet access enabled",
+          "severity": "HIGH",
+          "recommendation": "Disable direct internet access"
+        },
+        {
+          "check": "encryption",
+          "message": "Volume not encrypted",
+          "severity": "MEDIUM",
+          "recommendation": "Enable KMS encryption"
+        },
+        {
+          "check": "root_access",
+          "message": "Root access enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Disable root access"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_183",
+        "CKV_AWS_184",
+        "CKV_AWS_193"
+      ]
+    },
+    "aws_sagemaker_model": {
+      "terraform": "aws_sagemaker_model",
+      "cloudformation": "AWS::SageMaker::Model",
+      "pulumi": "aws.sagemaker.Model",
+      "resource_type": "ml",
+      "cloud_provider": "aws",
+      "canonical_name": "sagemaker_model",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": [
+          "vpc_config"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "network_isolation",
+          "message": "Network isolation disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable network isolation"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_187"
+      ]
+    },
+    "aws_sagemaker_endpoint": {
+      "terraform": "aws_sagemaker_endpoint",
+      "cloudformation": "AWS::SageMaker::Endpoint",
+      "pulumi": "aws.sagemaker.Endpoint",
+      "resource_type": "ml",
+      "cloud_provider": "aws",
+      "canonical_name": "sagemaker_endpoint",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "sagemaker_endpoint_config"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "kms_encryption",
+          "message": "Not encrypted with KMS",
+          "severity": "MEDIUM",
+          "recommendation": "Use KMS encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_187"
+      ]
+    },
+    "aws_sagemaker_endpoint_configuration": {
+      "terraform": "aws_sagemaker_endpoint_configuration",
+      "cloudformation": "AWS::SageMaker::EndpointConfig",
+      "pulumi": "aws.sagemaker.EndpointConfiguration",
+      "resource_type": "ml",
+      "cloud_provider": "aws",
+      "canonical_name": "sagemaker_endpoint_config",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": [
+        "CKV_AWS_187"
+      ]
+    },
+    "aws_rekognition_collection": {
+      "terraform": "aws_rekognition_collection",
+      "resource_type": "ml",
+      "cloud_provider": "aws",
+      "canonical_name": "rekognition_collection",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_cognitive_account": {
+      "terraform": "azurerm_cognitive_account",
+      "arm": "Microsoft.CognitiveServices/accounts",
+      "bicep": "Microsoft.CognitiveServices/accounts",
+      "pulumi": "azure.cognitive.Account",
+      "resource_type": "ml",
+      "cloud_provider": "azure",
+      "canonical_name": "cognitive_account",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_network",
+          "message": "Public network access enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Restrict to private endpoint"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_134"
+      ]
+    },
+    "azure_machine_learning_workspace": {
+      "terraform": "azurerm_machine_learning_workspace",
+      "arm": "Microsoft.MachineLearningServices/workspaces",
+      "bicep": "Microsoft.MachineLearningServices/workspaces",
+      "pulumi": "azure.machinelearning.Workspace",
+      "resource_type": "ml",
+      "cloud_provider": "azure",
+      "canonical_name": "ml_workspace",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "storage_account",
+          "key_vault",
+          "application_insights"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_network",
+          "message": "Public network access",
+          "severity": "MEDIUM",
+          "recommendation": "Use private endpoint"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_144"
+      ]
+    }
+  },
+  "management": {
+    "aws_cloudformation_stack": {
+      "terraform": "aws_cloudformation_stack",
+      "cloudformation": "AWS::CloudFormation::Stack",
+      "pulumi": "aws.cloudformation.Stack",
+      "resource_type": "management",
+      "cloud_provider": "aws",
+      "canonical_name": "cloudformation_stack",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "rollback",
+          "message": "Rollback disabled",
+          "severity": "LOW",
+          "recommendation": "Enable on_failure rollback"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "aws_systems_manager_parameter": {
+      "terraform": "aws_ssm_parameter",
+      "cloudformation": "AWS::SSM::Parameter",
+      "pulumi": "aws.ssm.Parameter",
+      "resource_type": "management",
+      "cloud_provider": "aws",
+      "canonical_name": "ssm_parameter",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Parameter not encrypted",
+          "severity": "HIGH",
+          "recommendation": "Use SecureString type with KMS"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_337"
+      ]
+    },
+    "azure_resource_group": {
+      "terraform": "azurerm_resource_group",
+      "arm": "Microsoft.Resources/resourceGroups",
+      "bicep": "Microsoft.Resources/resourceGroups",
+      "pulumi": "azure.core.ResourceGroup",
+      "resource_type": "management",
+      "cloud_provider": "azure",
+      "canonical_name": "resource_group",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_automation_account": {
+      "terraform": "azurerm_automation_account",
+      "arm": "Microsoft.Automation/automationAccounts",
+      "bicep": "Microsoft.Automation/automationAccounts",
+      "pulumi": "azure.automation.Account",
+      "resource_type": "management",
+      "cloud_provider": "azure",
+      "canonical_name": "automation_account",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_network",
+          "message": "Public network access enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Disable public network access"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_114"
+      ]
+    },
+    "aws_config_config_rule": {
+      "terraform": "aws_config_config_rule",
+      "cloudformation": "AWS::Config::ConfigRule",
+      "pulumi": "aws.cfg.Rule",
+      "resource_type": "management",
+      "cloud_provider": "aws",
+      "canonical_name": "config_rule",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_service_catalog_portfolio": {
+      "terraform": "aws_servicecatalog_portfolio",
+      "cloudformation": "AWS::ServiceCatalog::Portfolio",
+      "pulumi": "aws.servicecatalog.Portfolio",
+      "resource_type": "management",
+      "cloud_provider": "aws",
+      "canonical_name": "service_catalog_portfolio",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_organizations_organization": {
+      "terraform": "aws_organizations_organization",
+      "cloudformation": "AWS::Organizations::Organization",
+      "pulumi": "aws.organizations.Organization",
+      "resource_type": "management",
+      "cloud_provider": "aws",
+      "canonical_name": "organization",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "all_features",
+          "message": "Not all features enabled",
+          "severity": "LOW",
+          "recommendation": "Enable all features"
+        }
+      ],
+      "checkov_rules": []
+    },
+    "azure_policy_assignment": {
+      "terraform": "azurerm_policy_assignment",
+      "arm": "Microsoft.Authorization/policyAssignments",
+      "bicep": "Microsoft.Authorization/policyAssignments",
+      "pulumi": "azure.policy.Assignment",
+      "resource_type": "management",
+      "cloud_provider": "azure",
+      "canonical_name": "policy_assignment",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_blueprint": {
+      "terraform": "azurerm_blueprint_assignment",
+      "arm": "Microsoft.Blueprint/blueprintAssignments",
+      "bicep": "Microsoft.Blueprint/blueprintAssignments",
+      "resource_type": "management",
+      "cloud_provider": "azure",
+      "canonical_name": "blueprint_assignment",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_recovery_services_vault": {
+      "terraform": "azurerm_recovery_services_vault",
+      "arm": "Microsoft.RecoveryServices/vaults",
+      "bicep": "Microsoft.RecoveryServices/vaults",
+      "pulumi": "azure.recoveryservices.Vault",
+      "resource_type": "management",
+      "cloud_provider": "azure",
+      "canonical_name": "recovery_vault",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "soft_delete",
+          "message": "Soft delete not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable soft delete"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_124"
+      ]
+    }
+  },
+  "integration": {
+    "aws_sqs_queue": {
+      "terraform": "aws_sqs_queue",
+      "cloudformation": "AWS::SQS::Queue",
+      "pulumi": "aws.sqs.Queue",
+      "cdk": "sqs.Queue",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "sqs_queue",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": [
+          "kms_key"
+        ]
+      },
+      "security_recommendations": [
+        {
+          "check": "encryption",
+          "message": "Server-side encryption disabled",
+          "severity": "HIGH",
+          "recommendation": "Enable KMS encryption"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_27"
+      ]
+    },
+    "aws_eventbridge_rule": {
+      "terraform": "aws_cloudwatch_event_rule",
+      "cloudformation": "AWS::Events::Rule",
+      "pulumi": "aws.cloudwatch.EventRule",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "eventbridge_rule",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_step_functions_state_machine": {
+      "terraform": "aws_sfn_state_machine",
+      "cloudformation": "AWS::StepFunctions::StateMachine",
+      "pulumi": "aws.sfn.StateMachine",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "step_function",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "iam_role"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "logging",
+          "message": "Logging not enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable CloudWatch Logs"
+        },
+        {
+          "check": "xray",
+          "message": "X-Ray tracing disabled",
+          "severity": "LOW",
+          "recommendation": "Enable X-Ray tracing"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_284"
+      ]
+    },
+    "azure_service_bus_namespace": {
+      "terraform": "azurerm_servicebus_namespace",
+      "arm": "Microsoft.ServiceBus/namespaces",
+      "bicep": "Microsoft.ServiceBus/namespaces",
+      "pulumi": "azure.servicebus.Namespace",
+      "resource_type": "integration",
+      "cloud_provider": "azure",
+      "canonical_name": "service_bus_namespace",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_network",
+          "message": "Public network access enabled",
+          "severity": "MEDIUM",
+          "recommendation": "Restrict to private endpoint"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_201"
+      ]
+    },
+    "azure_event_hub_namespace": {
+      "terraform": "azurerm_eventhub_namespace",
+      "arm": "Microsoft.EventHub/namespaces",
+      "bicep": "Microsoft.EventHub/namespaces",
+      "pulumi": "azure.eventhub.EventHubNamespace",
+      "resource_type": "integration",
+      "cloud_provider": "azure",
+      "canonical_name": "event_hub_namespace",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "auto_inflate",
+          "message": "Auto-inflate not enabled",
+          "severity": "LOW",
+          "recommendation": "Consider enabling auto_inflate"
+        },
+        {
+          "check": "zone_redundant",
+          "message": "Zone redundancy disabled",
+          "severity": "LOW",
+          "recommendation": "Enable zone_redundant for HA"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_151"
+      ]
+    },
+    "aws_mq_broker": {
+      "terraform": "aws_mq_broker",
+      "cloudformation": "AWS::AmazonMQ::Broker",
+      "pulumi": "aws.mq.Broker",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "mq_broker",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [
+          "subnet"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_access",
+          "message": "Publicly accessible",
+          "severity": "HIGH",
+          "recommendation": "Set publicly_accessible = false"
+        },
+        {
+          "check": "audit_logging",
+          "message": "Audit logging disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable audit logging"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_69",
+        "CKV_AWS_197"
+      ]
+    },
+    "aws_appsync_graphql_api": {
+      "terraform": "aws_appsync_graphql_api",
+      "cloudformation": "AWS::AppSync::GraphQLApi",
+      "pulumi": "aws.appsync.GraphQLApi",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "appsync_api",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "logging",
+          "message": "CloudWatch logging disabled",
+          "severity": "MEDIUM",
+          "recommendation": "Enable CloudWatch logs"
+        },
+        {
+          "check": "waf",
+          "message": "WAF not associated",
+          "severity": "MEDIUM",
+          "recommendation": "Associate WAF WebACL"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_72",
+        "CKV_AWS_193"
+      ]
+    },
+    "aws_appconfig_application": {
+      "terraform": "aws_appconfig_application",
+      "cloudformation": "AWS::AppConfig::Application",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "appconfig_application",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "aws_swf_domain": {
+      "terraform": "aws_swf_domain",
+      "cloudformation": "AWS::SWF::Domain",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "swf_domain",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    },
+    "azure_logic_app_workflow": {
+      "terraform": "azurerm_logic_app_workflow",
+      "arm": "Microsoft.Logic/workflows",
+      "bicep": "Microsoft.Logic/workflows",
+      "pulumi": "azure.logicapps.Workflow",
+      "resource_type": "integration",
+      "cloud_provider": "azure",
+      "canonical_name": "logic_app",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "access_control",
+          "message": "No access control configured",
+          "severity": "MEDIUM",
+          "recommendation": "Configure access control"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_71"
+      ]
+    },
+    "azure_api_management": {
+      "terraform": "azurerm_api_management",
+      "arm": "Microsoft.ApiManagement/service",
+      "bicep": "Microsoft.ApiManagement/service",
+      "pulumi": "azure.apimanagement.Service",
+      "resource_type": "integration",
+      "cloud_provider": "azure",
+      "canonical_name": "api_management",
+      "cost_enabled": true,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "virtual_network",
+          "message": "Not in virtual network",
+          "severity": "MEDIUM",
+          "recommendation": "Deploy in virtual network"
+        },
+        {
+          "check": "min_api_version",
+          "message": "Old API version allowed",
+          "severity": "LOW",
+          "recommendation": "Set minimum API version"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AZURE_107",
+        "CKV_AZURE_174"
+      ]
+    },
+    "aws_sqs_queue_policy": {
+      "terraform": "aws_sqs_queue_policy",
+      "cloudformation": "AWS::SQS::QueuePolicy",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "sqs_queue_policy",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [
+          "sqs_queue"
+        ],
+        "recommended": []
+      },
+      "security_recommendations": [
+        {
+          "check": "public_access",
+          "message": "Queue allows public access",
+          "severity": "HIGH",
+          "recommendation": "Restrict to specific principals"
+        }
+      ],
+      "checkov_rules": [
+        "CKV_AWS_27"
+      ]
+    },
+    "aws_eventbridge_bus": {
+      "terraform": "aws_cloudwatch_event_bus",
+      "cloudformation": "AWS::Events::EventBus",
+      "resource_type": "integration",
+      "cloud_provider": "aws",
+      "canonical_name": "eventbridge_bus",
+      "cost_enabled": false,
+      "dependencies": {
+        "required": [],
+        "recommended": []
+      },
+      "security_recommendations": [],
+      "checkov_rules": []
+    }
+  }
+}

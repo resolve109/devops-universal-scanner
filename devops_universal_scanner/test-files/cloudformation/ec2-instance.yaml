@@ -1,0 +1,153 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Test CloudFormation template for EC2 instance with security issues for testing'
+
+Parameters:
+  InstanceType:
+    Type: String
+    Default: t3.micro
+    AllowedValues:
+      - t3.nano
+      - t3.micro
+      - t3.small
+    Description: EC2 instance type
+  
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair
+  
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: VPC ID where the instance will be launched
+
+Resources:
+  # Security Group with intentional security issues for testing
+  WebServerSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for web server
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        # SECURITY ISSUE: SSH open to world (0.0.0.0/0)
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH access from anywhere
+        # SECURITY ISSUE: HTTP open to world
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP access from anywhere
+        # SECURITY ISSUE: All ports open internally
+        - IpProtocol: -1
+          CidrIp: 10.0.0.0/8
+          Description: All traffic from private networks
+      SecurityGroupEgress:
+        # SECURITY ISSUE: All outbound traffic allowed
+        - IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+          Description: All outbound traffic
+      Tags:
+        - Key: Name
+          Value: TestWebServerSG
+        - Key: Environment
+          Value: Test
+
+  # EC2 Instance with potential issues
+  WebServerInstance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      # SECURITY ISSUE: Using outdated AMI ID (should use latest)
+      ImageId: ami-0abcdef1234567890
+      SecurityGroupIds:
+        - !Ref WebServerSecurityGroup
+      # SECURITY ISSUE: No encryption specified
+      BlockDeviceMappings:
+        - DeviceName: /dev/xvda
+          Ebs:
+            VolumeSize: 20
+            VolumeType: gp3
+            # Encrypted: false # This should be true
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          yum install -y httpd
+          systemctl start httpd
+          systemctl enable httpd
+          # SECURITY ISSUE: Hardcoded credentials in user data
+          echo "admin:password123" > /tmp/credentials.txt
+          echo "<h1>Test Web Server</h1>" > /var/www/html/index.html
+      Tags:
+        - Key: Name
+          Value: TestWebServer
+        - Key: Environment
+          Value: Test
+
+  # S3 Bucket with security issues
+  TestBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "test-bucket-${AWS::AccountId}-${AWS::Region}"
+      # SECURITY ISSUE: Public read access
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      # SECURITY ISSUE: No encryption specified
+      # BucketEncryption: not specified
+      # SECURITY ISSUE: No versioning
+      # VersioningConfiguration: not specified
+      Tags:
+        - Key: Name
+          Value: TestBucket
+        - Key: Environment
+          Value: Test
+
+  # IAM Role with overly broad permissions
+  TestRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: TestEC2Role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      # SECURITY ISSUE: Overly broad permissions
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/PowerUserAccess
+      Policies:
+        - PolicyName: TestPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              # SECURITY ISSUE: Full S3 access
+              - Effect: Allow
+                Action: s3:*
+                Resource: "*"
+
+Outputs:
+  InstanceId:
+    Description: Instance ID of the web server
+    Value: !Ref WebServerInstance
+    Export:
+      Name: !Sub "${AWS::StackName}-InstanceId"
+  
+  SecurityGroupId:
+    Description: Security Group ID
+    Value: !Ref WebServerSecurityGroup
+    Export:
+      Name: !Sub "${AWS::StackName}-SecurityGroupId"
+  
+  BucketName:
+    Description: S3 Bucket Name
+    Value: !Ref TestBucket
+    Export:
+      Name: !Sub "${AWS::StackName}-BucketName"

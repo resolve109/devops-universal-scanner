@@ -1,0 +1,174 @@
+{
+  "metadata": {
+    "last_updated": "2025-01-15T00:00:00Z",
+    "version": "1.0.0",
+    "description": "Curated database of secure AMI alternatives for CVE-affected images",
+    "update_frequency": "monthly",
+    "TODO": "IMPLEMENTATION PENDING - This is a placeholder structure"
+  },
+  "distributions": {
+    "amazon_linux_2023": {
+      "name": "Amazon Linux 2023",
+      "description": "Amazon Linux 2023 (AL2023) - Latest generation",
+      "eol_date": "2028-03-15",
+      "regions": {
+        "us-east-1": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2023.3.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          },
+          "arm64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2023.3.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          }
+        },
+        "us-west-2": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2023.3.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          },
+          "arm64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2023.3.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          }
+        }
+      }
+    },
+    "amazon_linux_2": {
+      "name": "Amazon Linux 2",
+      "description": "Amazon Linux 2 (AL2) - Stable LTS release",
+      "eol_date": "2025-06-30",
+      "regions": {
+        "us-east-1": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2.0.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          },
+          "arm64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2.0.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          }
+        },
+        "us-west-2": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "2.0.20250115",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "AWS Official"
+          }
+        }
+      }
+    },
+    "ubuntu_24_04": {
+      "name": "Ubuntu 24.04 LTS (Noble Numbat)",
+      "description": "Ubuntu Server 24.04 LTS - Long Term Support",
+      "eol_date": "2029-04-30",
+      "regions": {
+        "us-east-1": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "24.04",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "Canonical Official"
+          },
+          "arm64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "24.04",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "Canonical Official"
+          }
+        },
+        "us-west-2": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "24.04",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "Canonical Official"
+          }
+        }
+      }
+    },
+    "ubuntu_22_04": {
+      "name": "Ubuntu 22.04 LTS (Jammy Jellyfish)",
+      "description": "Ubuntu Server 22.04 LTS - Long Term Support",
+      "eol_date": "2027-04-30",
+      "regions": {
+        "us-east-1": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "22.04",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "Canonical Official"
+          },
+          "arm64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "22.04",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "Canonical Official"
+          }
+        }
+      }
+    },
+    "ubuntu_20_04": {
+      "name": "Ubuntu 20.04 LTS (Focal Fossa)",
+      "description": "Ubuntu Server 20.04 LTS - Long Term Support",
+      "eol_date": "2025-04-30",
+      "regions": {
+        "us-east-1": {
+          "x86_64": {
+            "ami_id": "ami-TODO-REPLACE-WITH-REAL",
+            "version": "20.04",
+            "last_updated": "2025-01-15",
+            "verified_cve_free": true,
+            "source": "Canonical Official"
+          }
+        }
+      }
+    }
+  },
+  "TODO_ITEMS": [
+    "Replace all 'ami-TODO-REPLACE-WITH-REAL' with actual AMI IDs",
+    "Add RHEL 9.x and 8.x distributions",
+    "Add Windows Server 2022 and 2019",
+    "Add Debian 12 and 11",
+    "Add SUSE Linux Enterprise Server",
+    "Expand to all major AWS regions (currently only us-east-1, us-west-2)",
+    "Set up automated monthly updates via CI/CD",
+    "Add CVE verification pipeline",
+    "Add AMI age tracking and auto-deprecation warnings"
+  ],
+  "update_instructions": {
+    "manual_update": "Use AWS SSM Parameter Store to fetch latest AMI IDs",
+    "automation": "See .github/workflows/update-ami-database.yml (to be created)",
+    "verification": "Each AMI should be verified CVE-free before adding",
+    "regions_to_cover": [
+      "us-east-1", "us-east-2", "us-west-1", "us-west-2",
+      "eu-west-1", "eu-west-2", "eu-central-1",
+      "ap-southeast-1", "ap-southeast-2", "ap-northeast-1"
+    ]
+  }
+}

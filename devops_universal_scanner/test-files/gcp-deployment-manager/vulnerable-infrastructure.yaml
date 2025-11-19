@@ -1,0 +1,124 @@
+# GCP Deployment Manager template with security vulnerabilities
+# This template creates a Compute Engine instance with intentional security issues
+
+imports:
+- path: vm-template.jinja
+
+resources:
+- name: vulnerable-vm-instance
+  type: vm-template.jinja
+  properties:
+    # Issue: Using default machine type (might be oversized)
+    machineType: n1-standard-1
+    zone: us-central1-a
+    
+    # Issue: Using default service account with broad permissions
+    serviceAccount: default
+    
+    # Issue: No disk encryption specified
+    diskEncryption: false
+    
+    # Issue: Boot disk not properly configured
+    bootDiskSize: 10
+    bootDiskType: pd-standard
+    
+    # Issue: Network configuration allows all traffic
+    networkConfig:
+      allowHttp: true
+      allowHttps: true
+      allowSsh: true
+      # Issue: SSH from anywhere
+      sshSourceRanges: 
+        - "0.0.0.0/0"
+      # Issue: HTTP from anywhere  
+      httpSourceRanges:
+        - "0.0.0.0/0"
+    
+    # Issue: Metadata with sensitive information
+    metadata:
+      # Issue: SSH keys in metadata
+      ssh-keys: |
+        testuser:ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC7... testuser@example.com
+      # Issue: Startup script with hardcoded credentials
+      startup-script: |
+        #!/bin/bash
+        # Issue: Hardcoded database credentials
+        export DB_PASSWORD="admin123"
+        export API_KEY="sk-1234567890abcdef"
+        export JWT_SECRET="mysupersecretjwtkey"
+        
+        # Issue: Installing software without verification
+        curl -fsSL https://get.docker.com -o get-docker.sh
+        sh get-docker.sh
+        
+        # Issue: Running services as root
+        docker run -d -p 80:80 nginx
+        
+        # Issue: Storing secrets in files
+        echo "admin123" > /etc/mysql_root_password
+        chmod 644 /etc/mysql_root_password
+      
+      # Issue: Enable OS Login disabled (less secure)
+      enable-oslogin: "false"
+      
+      # Issue: Serial port access enabled
+      serial-port-enable: "true"
+
+- name: vulnerable-firewall-rule
+  type: compute.v1.firewall
+  properties:
+    # Issue: Overly permissive firewall rule
+    allowed:
+    - IPProtocol: tcp
+      ports:
+      - "22"    # SSH
+      - "80"    # HTTP
+      - "443"   # HTTPS
+      - "3389"  # RDP
+      - "1433"  # SQL Server
+      - "3306"  # MySQL
+      - "5432"  # PostgreSQL
+      - "6379"  # Redis
+      - "27017" # MongoDB
+    
+    # Issue: Source ranges too broad
+    sourceRanges:
+    - "0.0.0.0/0"
+    
+    # Issue: No target tags specified (applies to all instances)
+    direction: INGRESS
+    priority: 1000
+
+- name: vulnerable-storage-bucket
+  type: storage.v1.bucket
+  properties:
+    # Issue: Bucket name predictable
+    name: my-company-secrets-bucket-123
+    
+    # Issue: Public access allowed
+    iamConfiguration:
+      uniformBucketLevelAccess:
+        enabled: false
+    
+    # Issue: No versioning enabled
+    versioning:
+      enabled: false
+    
+    # Issue: No lifecycle management
+    # Issue: No encryption configuration specified
+    
+    # Issue: Default ACL too permissive
+    defaultObjectAcl:
+    - entity: allUsers
+      role: READER
+
+outputs:
+- name: vmInstanceName
+  value: $(ref.vulnerable-vm-instance.name)
+- name: vmExternalIp
+  value: $(ref.vulnerable-vm-instance.networkInterfaces[0].accessConfigs[0].natIP)
+- name: bucketName
+  value: $(ref.vulnerable-storage-bucket.name)
+# Issue: Outputting sensitive information
+- name: sshCommand
+  value: ssh testuser@$(ref.vulnerable-vm-instance.networkInterfaces[0].accessConfigs[0].natIP)

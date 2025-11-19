@@ -1,0 +1,215 @@
+# WARNING: This CloudFormation template contains intentional security vulnerabilities
+# DO NOT USE IN PRODUCTION!
+
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Vulnerable serverless application with security issues'
+
+Parameters:
+  DatabasePassword:
+    Type: String
+    Default: 'admin123'  # Hardcoded weak password
+    Description: 'Database password'
+    NoEcho: false  # Should be true for passwords
+
+Resources:
+  # Lambda function with excessive permissions
+  VulnerableLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: 'vulnerable-lambda'
+      Runtime: 'python3.8'  # Outdated runtime
+      Handler: 'lambda_function.lambda_handler'
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ZipFile: |
+          import json
+          import os
+          def lambda_handler(event, context):
+              # Hardcoded credentials in code
+              api_key = "sk-1234567890abcdef"
+              db_password = "admin123"
+              
+              # Logging sensitive data
+              print(f"API Key: {api_key}")
+              print(f"Password: {db_password}")
+              
+              return {
+                  'statusCode': 200,
+                  'body': json.dumps({
+                      'message': 'Hello from vulnerable Lambda!',
+                      'api_key': api_key  # Exposing secrets in response
+                  })
+              }
+      Environment:
+        Variables:
+          DB_PASSWORD: !Ref DatabasePassword  # Plain text password
+          API_KEY: 'sk-1234567890abcdef'  # Hardcoded secret
+          DEBUG: 'true'
+      ReservedConcurrencyExecution: 1000  # No concurrency limits
+      Timeout: 900  # Maximum timeout
+      
+  # Lambda execution role with excessive permissions
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: lambda.amazonaws.com
+          Action: sts:AssumeRole
+      ManagedPolicyArns:
+      - arn:aws:iam::aws:policy/AdministratorAccess  # Full admin access
+      - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      
+  # API Gateway with no authentication
+  VulnerableApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Properties:
+      Name: 'vulnerable-api'
+      Description: 'API Gateway with security vulnerabilities'
+      EndpointConfiguration:
+        Types:
+        - EDGE
+      # No authentication configured
+      
+  # API Gateway resource
+  ApiGatewayResource:
+    Type: AWS::ApiGateway::Resource
+    Properties:
+      RestApiId: !Ref VulnerableApiGateway
+      ParentId: !GetAtt VulnerableApiGateway.RootResourceId
+      PathPart: 'vulnerable'
+      
+  # API Gateway method with no authorization
+  ApiGatewayMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      RestApiId: !Ref VulnerableApiGateway
+      ResourceId: !Ref ApiGatewayResource
+      HttpMethod: 'ANY'
+      AuthorizationType: 'NONE'  # No authentication
+      Integration:
+        Type: 'AWS_PROXY'
+        IntegrationHttpMethod: 'POST'
+        Uri: !Sub 'arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${VulnerableLambdaFunction.Arn}/invocations'
+        
+  # API Gateway deployment
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    DependsOn: ApiGatewayMethod
+    Properties:
+      RestApiId: !Ref VulnerableApiGateway
+      StageName: 'prod'
+      
+  # Lambda permission for API Gateway
+  LambdaApiGatewayPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref VulnerableLambdaFunction
+      Action: 'lambda:InvokeFunction'
+      Principal: 'apigateway.amazonaws.com'
+      SourceArn: !Sub '${VulnerableApiGateway}/*/*'
+      
+  # DynamoDB table without encryption
+  VulnerableDynamoDBTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: 'vulnerable-table'
+      BillingMode: 'PAY_PER_REQUEST'
+      AttributeDefinitions:
+      - AttributeName: 'id'
+        AttributeType: 'S'
+      KeySchema:
+      - AttributeName: 'id'
+        KeyType: 'HASH'
+      # No encryption at rest
+      # SSESpecification:
+      #   SSEEnabled: false
+      # No point-in-time recovery
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: false
+        
+  # S3 bucket with public access
+  VulnerableS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub 'vulnerable-bucket-${AWS::AccountId}'
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false  # Public ACLs allowed
+        BlockPublicPolicy: false  # Public policies allowed
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      # No encryption
+      # BucketEncryption:
+      #   ServerSideEncryptionConfiguration: []
+      # No versioning
+      VersioningConfiguration:
+        Status: Suspended
+      # No logging
+      # LoggingConfiguration: {}
+      
+  # S3 bucket policy allowing public read
+  VulnerableS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref VulnerableS3Bucket
+      PolicyDocument:
+        Statement:
+        - Sid: 'PublicReadGetObject'
+          Effect: 'Allow'
+          Principal: '*'  # Public access
+          Action: 's3:GetObject'
+          Resource: !Sub '${VulnerableS3Bucket}/*'
+        - Sid: 'PublicListBucket'
+          Effect: 'Allow'
+          Principal: '*'  # Public access
+          Action: 's3:ListBucket'
+          Resource: !Ref VulnerableS3Bucket
+          
+  # CloudWatch log group without encryption
+  LambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub '/aws/lambda/${VulnerableLambdaFunction}'
+      RetentionInDays: 30
+      # No encryption
+      # KmsKeyId: ''
+      
+  # SQS queue without encryption
+  VulnerableSQSQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: 'vulnerable-queue'
+      # No encryption
+      # KmsMasterKeyId: ''
+      # No dead letter queue
+      # RedrivePolicy: {}
+      
+  # SNS topic without encryption
+  VulnerableSNSTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: 'vulnerable-topic'
+      # No encryption
+      # KmsMasterKeyId: ''
+      
+Outputs:
+  ApiGatewayUrl:
+    Description: 'API Gateway endpoint URL'
+    Value: !Sub 'https://${VulnerableApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/vulnerable'
+    Export:
+      Name: !Sub '${AWS::StackName}-ApiUrl'
+      
+  LambdaFunctionName:
+    Description: 'Lambda function name'
+    Value: !Ref VulnerableLambdaFunction
+    
+  S3BucketName:
+    Description: 'S3 bucket name'
+    Value: !Ref VulnerableS3Bucket
+    
+  DatabasePassword:
+    Description: 'Database password'
+    Value: !Ref DatabasePassword  # Exposing password in outputs

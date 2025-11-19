@@ -1,615 +1,743 @@
-# CLAUDE.md - DevOps Universal Scanner
+# CLAUDE.md - DevOps Universal Scanner v3.0
 
-**AI Assistant Guide for the DevOps Universal Scanner Repository**
+**AI Assistant Guide & Python 2025 Best Practices**
 
 ## Repository Overview
 
-The DevOps Universal Scanner is a comprehensive Docker-based security scanning tool for Infrastructure as Code (IaC) and container images. It provides automated security analysis for multiple cloud providers and IaC formats using industry-standard security scanning tools.
+The DevOps Universal Scanner v3.0 is a **Pure Python 3.13** security scanning tool for Infrastructure as Code (IaC). It provides automated security analysis, FinOps intelligence, and CVE scanning using industry-standard tools with native intelligence layers.
 
-### Key Characteristics
-- **Language Mix**: Bash (scanner scripts), Python (helper modules), Docker (containerization)
-- **Architecture**: Multi-stage Docker build with Alpine Linux base
+### Key Characteristics (v3.0)
+- **Language**: Pure Python 3.13 (NO bash scripts)
+- **Architecture**: Multi-stage Docker build with Python 3.13 Alpine base
 - **Distribution**: Docker Hub (`spd109/devops-uat`)
-- **Purpose**: Security scanning and vulnerability detection for DevOps/IaC workflows
+- **Purpose**: Multi-cloud IaC security + FinOps + AI/ML cost analysis + CVE scanning
+- **Image Size**: ~600-700MB (30-40% smaller than v2.0)
 - **Platform Support**: Multi-platform (linux/amd64, linux/arm64)
 
-## Directory Structure
+## Directory Structure (v3.0)
 
 ```
-devops-universal-scanner/
-├── scanners/                    # Scanner shell scripts for each IaC type
-│   ├── scan-terraform.sh       # Terraform scanner (TFLint, TFSec, Checkov)
-│   ├── scan-cloudformation.sh  # AWS CloudFormation scanner
-│   ├── scan-docker.sh          # Container image scanner (Trivy)
-│   ├── scan-arm.sh             # Azure ARM template scanner
-│   ├── scan-bicep.sh           # Azure Bicep scanner
-│   ├── scan-gcp.sh             # GCP Deployment Manager scanner
-│   └── scan-kubernetes.sh      # Kubernetes manifest scanner
+/
+├── Dockerfile                      # Multi-stage optimized build
+├── requirements.txt                # Python dependencies
+├── README.md                       # User documentation
+├── CLAUDE.md                       # This file (AI assistant guide)
+├── ARCHITECTURE.md                 # Architecture documentation
+├── CHANGELOG-v3.0.md               # Version 3.0 changelog
+├── LICENSE                         # MIT License
+├── .gitignore                      # Git ignore rules
 │
-├── helpers/                     # Python helper modules
-│   ├── scanner_orchestrator.py # Coordinates scanner execution
-│   ├── docker_manager.py       # Docker command builder and executor
-│   ├── path_detector.py        # Cross-platform path detection
-│   ├── result_processor.py     # Scan result processing
-│   ├── scan-formatter.py       # Output formatting
-│   └── checkov-processor.sh    # Checkov-specific processing
-│
-├── test-files/                 # Vulnerable test templates (DO NOT USE IN PROD)
-│   ├── terraform/              # Test Terraform configs with vulnerabilities
-│   ├── cloudformation/         # Test CloudFormation templates
-│   ├── azure-arm/              # Test Azure ARM templates
-│   ├── azure-bicep/            # Test Bicep templates
-│   ├── gcp-deployment-manager/ # Test GCP templates
-│   ├── kubernetes/             # Test Kubernetes manifests
-│   └── docker/                 # Test Dockerfiles with issues
-│
-├── Dockerfile                  # Multi-stage Alpine-based build
-├── docker-entrypoint.sh        # Container entry point with auto-detection
-├── daily-update-manager.sh     # Intelligent security update system
-├── uat-setup.sh                # UAT setup script
-├── docker-tools-help.sh        # Help documentation
-├── README.md                   # User-facing documentation
-├── SECURITY-UPDATE-SUMMARY.md  # Security update history
-└── CLAUDE.md                   # This file
+└── devops_universal_scanner/       # Main Python package
+    ├── __init__.py                 # Package initialization
+    ├── __main__.py                 # CLI entry point (python -m devops_universal_scanner)
+    ├── entrypoint.py               # Docker container entrypoint
+    │
+    ├── core/                       # Core scanning engine
+    │   ├── __init__.py
+    │   ├── scanner.py              # Main orchestrator (replaces ALL .sh scripts)
+    │   ├── logger.py               # Dual logging (console + file)
+    │   ├── tool_runner.py          # Base tool execution
+    │   │
+    │   ├── analyzers/              # Native intelligence analyzers
+    │   │   ├── finops/             # FinOps cost analysis
+    │   │   ├── aiml/               # AI/ML GPU optimization
+    │   │   ├── security/           # Enhanced security checks
+    │   │   └── reporting/          # Report generation
+    │   │
+    │   ├── cve/                    # CVE scanning
+    │   │   ├── tool_cve_scanner.py
+    │   │   ├── ami_cve_scanner.py
+    │   │   └── image_cve_scanner.py
+    │   │
+    │   ├── pricing/                # Live pricing APIs
+    │   │   ├── aws_pricing.py
+    │   │   ├── azure_pricing.py
+    │   │   └── gcp_pricing.py
+    │   │
+    │   ├── knowledge/              # Policy knowledge base
+    │   │   ├── policy_loader.py
+    │   │   └── custom_rules.py
+    │   │
+    │   ├── data/                   # Static data & cost estimates
+    │   ├── helpers/                # Utility functions
+    │   ├── rules/                  # Custom security rules
+    │   ├── security/               # Security utilities
+    │   ├── costs/                  # Cost calculation functions
+    │   └── network/                # Network analysis
+    │
+    ├── docs/                       # Policy & tool documentation
+    │   ├── 3.Custom Policies/
+    │   ├── 4.Integrations/
+    │   ├── 5.Policy Index/         # Checkov + all tool policies
+    │   ├── 6.Contribution/
+    │   ├── 7.Scan Examples/
+    │   └── 8.Outputs/
+    │
+    └── test-files/                 # Vulnerable test templates
+        ├── terraform/
+        ├── cloudformation/
+        ├── kubernetes/
+        └── ...
 ```
-
-## Architecture Overview
-
-### Multi-Stage Docker Build
-
-The project uses a multi-stage Docker build to minimize image size:
-
-1. **Builder Stage** (Alpine 3.21.3):
-   - Compiles binaries and installs tools
-   - Installs Python packages with build dependencies
-   - Downloads scanner tools (Terraform, TFLint, TFSec, Trivy, etc.)
-   - Size optimization through temporary build environment
-
-2. **Runtime Stage** (Alpine 3.21.3):
-   - Only runtime dependencies
-   - Copies compiled binaries from builder
-   - Python virtual environment for isolation
-   - ~1.02GB final image (35% smaller than original)
-
-### Scanner Tools Included
-
-| Category | Tools | Version Management |
-|----------|-------|-------------------|
-| **Terraform** | Terraform CLI, TFLint, TFSec, Checkov | Latest from GitHub releases |
-| **AWS** | CFN-Lint, Checkov | Latest from pip/GitHub |
-| **Azure** | Bicep CLI, ARM-TTK, Checkov | Latest from GitHub/git |
-| **GCP** | Google Cloud Libraries, Checkov | Latest from pip |
-| **Container** | Trivy | Latest from GitHub releases |
-| **Kubernetes** | kube-score, Kubescape | Currently disabled (see Dockerfile) |
-
-### Key Components
-
-#### 1. Scanner Scripts (`scanners/*.sh`)
-
-**Pattern**: All scanner scripts follow a consistent structure:
-
-```bash
-#!/bin/bash
-set +e  # Don't exit on errors - handle gracefully
-
-# Working directory setup
-cd /work
-TARGET="$1"
-TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
-OUTPUT_PATH="/work/<type>-scan-report-${TIMESTAMP}.log"
-
-# Logging functions
-log_message() { ... }
-log_success() { ... }
-log_warning() { ... }
-log_error() { ... }
-log_section() { ... }
-
-# Input validation
-# Path normalization
-# Tool execution with logging
-# Summary generation
-```
-
-**Key Conventions**:
-- All scripts accept a target (file/directory) as first argument
-- Generate timestamped `.log` files with full output
-- Use emoji indicators (✅ ⚠️ ❌) for visual feedback
-- Exit codes are captured but don't halt execution
-- All output is both displayed and logged to file
-
-#### 2. Docker Entrypoint (`docker-entrypoint.sh`)
-
-**Responsibilities**:
-- Command routing to appropriate scanner
-- Volume mount validation and helpful error messages
-- Background security update management
-- Cross-platform command examples in error messages
-- Tool wrapper execution
-
-**Command Flow**:
-```
-User command → Entrypoint → Volume check → Scanner script → Tool execution → Log file
-```
-
-#### 3. Helper Modules (`helpers/*.py`)
-
-**scanner_orchestrator.py**:
-- Coordinates scanner execution
-- Maps commands to scanner scripts
-- Validates scanner availability
-- Provides scanner metadata
-
-**path_detector.py**:
-- Cross-platform path detection (Windows/Linux/macOS)
-- Docker volume mount formatting
-- Path validation and resolution
-- Container path translation
-
-**docker_manager.py**:
-- Docker availability checking
-- Command building for Docker execution
-- Container image management
-- Docker command execution
-
-**result_processor.py**:
-- Scan result parsing
-- Finding aggregation
-- Report generation
-
-#### 4. Update Management (`daily-update-manager.sh`)
-
-**Intelligent Caching System**:
-- Updates security packages once per day (not every run)
-- Timestamp-based caching in `/var/cache/devops-scanner/`
-- Background updates don't block container usage
-- Comprehensive logging to `/var/log/devops-scanner/updates.log`
-
-**Commands**:
-- `update-status` - Show current update status and tool versions
-- `update-force` - Force immediate security updates
-- `update-help` - Display update manager help
-
-## Development Workflows
-
-### Building the Docker Image
-
-```bash
-# Standard build
-docker build -t spd109/devops-uat:latest .
-
-# Multi-platform build (requires buildx)
-docker buildx build --platform linux/amd64,linux/arm64 -t spd109/devops-uat:latest .
-
-# Build with date tag
-docker build -t spd109/devops-uat:$(date +%Y%m%d) .
-```
-
-**Build Time**: ~1.1 minutes (56% faster than original)
-**Image Size**: ~1.02GB (35.4% smaller than original)
-
-### Testing Scanners
-
-```bash
-# Test Terraform scanner
-docker run --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-terraform test-files/terraform/
-
-# Test CloudFormation scanner
-docker run --rm -v "$(pwd):/work" spd109/devops-uat:latest scan-cloudformation test-files/cloudformation/ec2-instance.yaml
-
-# Test Docker image scanner (no volume needed)
-docker run --rm spd109/devops-uat:latest scan-docker nginx:latest
-
-# Run all tests
-for scanner in terraform cloudformation docker arm bicep gcp kubernetes; do
-    echo "Testing $scanner..."
-    # Run appropriate test
-done
-```
-
-### Adding a New Scanner
-
-1. **Create scanner script** in `scanners/scan-<name>.sh`:
-   ```bash
-   #!/bin/bash
-   set +e
-   cd /work
-   TARGET="$1"
-   TIMESTAMP=$(date '+%Y%m%d-%H%M%S')
-   OUTPUT_PATH="/work/<name>-scan-report-${TIMESTAMP}.log"
-
-   # Add logging functions
-   # Add validation
-   # Add tool execution
-   # Add summary
-   ```
-
-2. **Install tools** in `Dockerfile`:
-   - Add to builder stage if compilation needed
-   - Add to runtime stage for runtime-only tools
-   - Create symbolic links in `/usr/local/bin/`
-
-3. **Update entrypoint** in `docker-entrypoint.sh`:
-   ```bash
-   case "$COMMAND" in
-       scan-<name>)
-           exec /usr/local/bin/tools/scan-<name>.sh "$@"
-           ;;
-   esac
-   ```
-
-4. **Add to orchestrator** in `helpers/scanner_orchestrator.py`:
-   ```python
-   self.scanner_commands = {
-       '<name>': 'scan-<name>',
-       # ...
-   }
-   ```
-
-5. **Create test files** in `test-files/<name>/`
-
-6. **Update documentation** in `README.md`
-
-## Code Conventions
-
-### Bash Scripts
-
-1. **Error Handling**:
-   ```bash
-   set +e  # Don't exit on errors - handle gracefully
-   # Capture exit codes
-   TOOL_EXIT=$?
-   # Log based on exit code
-   ```
-
-2. **Logging**:
-   - Always use logging functions (`log_message`, `log_success`, etc.)
-   - Include timestamps in all log entries
-   - Use emoji indicators for quick visual feedback
-   - Both display and append to log file
-
-3. **Path Handling**:
-   ```bash
-   # Remove /work/ prefix if provided
-   TARGET=$(echo "$TARGET" | sed 's|^/work/||')
-
-   # Check existence before use
-   if [ ! -e "$TARGET" ]; then
-       log_error "Target '$TARGET' not found!"
-       exit 1
-   fi
-   ```
-
-4. **Variable Naming**:
-   - ALL_CAPS for constants and environment variables
-   - lowercase_with_underscores for local variables
-   - Descriptive names (not single letters)
-
-### Python Modules
-
-1. **Class Design**:
-   - Single responsibility principle
-   - Type hints for function parameters and returns
-   - Docstrings for all public methods
-
-2. **Error Handling**:
-   ```python
-   try:
-       # Operation
-   except Exception as e:
-       print(f"❌ Error: {e}")
-       return False
-   ```
-
-3. **Cross-Platform Support**:
-   ```python
-   import platform
-   self.platform = platform.system().lower()
-   self.is_windows = self.platform == 'windows'
-   ```
-
-### Dockerfile
-
-1. **Multi-Stage Pattern**:
-   ```dockerfile
-   FROM alpine:3.21.3 AS builder
-   # Build dependencies
-
-   FROM alpine:3.21.3
-   # Runtime only
-   COPY --from=builder /compiled/binaries /destination/
-   ```
-
-2. **Layer Optimization**:
-   - Combine related RUN commands with `&&`
-   - Clean up in same layer as installation
-   - Remove .git directories and docs
-
-3. **Security**:
-   - Use specific version tags (not `latest` for base images)
-   - Run as non-root where possible (currently root for tool compatibility)
-   - Regular security updates via update manager
-
-## Testing Strategy
-
-### Test Files
-
-**CRITICAL**: All files in `test-files/` contain **intentional security vulnerabilities** for testing purposes.
-
-**DO NOT**:
-- Use test files in production
-- Deploy test templates to cloud providers
-- Copy test patterns to real infrastructure
-
-**Purpose**:
-- Validate scanner detection capabilities
-- Test all security check categories
-- Provide reproducible test cases
-
-### Test Categories
-
-Each test file category tests specific vulnerabilities:
-
-1. **Authentication & Authorization**:
-   - Hardcoded credentials
-   - Weak passwords
-   - Overly permissive IAM
-
-2. **Network Security**:
-   - 0.0.0.0/0 access rules
-   - Public subnets
-   - Missing VPC flow logs
-
-3. **Data Protection**:
-   - Unencrypted storage
-   - Public read/write access
-   - No backup encryption
-
-4. **Monitoring & Logging**:
-   - Disabled audit logging
-   - No security monitoring
-
-5. **Configuration Security**:
-   - Debug modes enabled
-   - Default configurations
-   - Insecure protocols
-
-## Security Considerations
-
-### CVEs Addressed
-
-The project actively addresses security vulnerabilities:
-
-1. **CVE-2025-47273** (setuptools): Updated to >= 75.0.0
-2. **CVE-2024-29415** (npm ip): Updated to latest
-3. **CVE-2024-21538** (cross-spawn): Updated to latest
-4. **CVE-2022-25883** (semver): Updated to latest
-5. **CVE-2024-28863** (tar): Updated to latest
-6. **CVE-2025-24359** (asteval): Updated to latest
-
-See `SECURITY-UPDATE-SUMMARY.md` for complete details.
-
-### Update Management
-
-**Daily Update System**:
-- Checks for updates once per day (timestamp-based)
-- Background updates don't block container startup
-- Logs all updates to `/var/log/devops-scanner/updates.log`
-- Graceful fallback if updates fail
-
-### Credential Handling
-
-**Git Ignore Patterns**:
-```gitignore
-# Docker Hub credentials
-dockerhub-credentials.txt
-*.token
-
-# Cloud credentials
-aws-credentials.txt
-.aws/
-
-# Environment files
-.env
-*.env
-```
-
-**Never commit**:
-- API keys or tokens
-- Cloud provider credentials
-- Docker Hub credentials
-- Any `.env` files
-
-## Common Tasks
-
-### Running Scans Locally
-
-```bash
-# From repository root
-docker build -t devops-uat-local .
-
-# Test with local files
-docker run --rm -v "$(pwd):/work" devops-uat-local scan-terraform test-files/terraform/
-
-# Debug mode (interactive shell)
-docker run -it --rm -v "$(pwd):/work" devops-uat-local /bin/bash
-```
-
-### Debugging Scanner Issues
-
-1. **Check volume mount**:
-   ```bash
-   docker run --rm -v "$(pwd):/work" spd109/devops-uat:latest ls -la /work
-   ```
-
-2. **Run scanner with verbose output**:
-   - Scanners already log all output to `.log` files
-   - Check the generated log file for details
-
-3. **Interactive debugging**:
-   ```bash
-   docker run -it --rm -v "$(pwd):/work" spd109/devops-uat:latest /bin/bash
-   cd /work
-   /usr/local/bin/tools/scan-terraform.sh test-files/terraform/
-   ```
-
-4. **Check tool versions**:
-   ```bash
-   docker run --rm spd109/devops-uat:latest update-status
-   ```
-
-### Updating Documentation
-
-1. **README.md**: User-facing documentation
-   - Keep examples current
-   - Update version numbers
-   - Add new scanner commands
-
-2. **CLAUDE.md**: This file (AI assistant guide)
-   - Update when architecture changes
-   - Add new patterns and conventions
-   - Document new workflows
-
-3. **SECURITY-UPDATE-SUMMARY.md**: Security changelog
-   - Add CVE fixes
-   - Document security improvements
-   - Track version updates
-
-## Git Workflow
-
-### Branch Strategy
-
-- **Main branch**: Stable releases
-- **Development branches**: Feature development (often named with `claude/` prefix for AI sessions)
-- **Pull requests**: Required for merging to main
-
-### Commit Messages
-
-Follow conventional commits:
-```
-feat: Add new GCP scanner support
-fix: Resolve volume mount issue on Windows
-docs: Update scanner command examples
-security: Address CVE-2025-XXXXX in dependency
-refactor: Optimize Docker layer caching
-```
-
-### Important Notes
-
-1. **kube-score and Kubescape**: Currently disabled in Dockerfile (lines 65-73)
-   - Created as stub scripts to prevent errors
-   - Can be re-enabled when issues are resolved
-
-2. **Scan Reports**: Generated `.log` files are intentionally NOT in `.gitignore`
-   - Some example reports are committed for reference
-   - Don't commit real security scan results from production
-
-## Troubleshooting Guide
-
-### "Docker not found" Error
-
-**Cause**: Docker not in system PATH or not running
-
-**Solution**:
-1. Verify Docker is installed: `docker --version`
-2. Check Docker is running: `docker info`
-3. On Windows, add to PATH:
-   - `C:\Program Files\Docker\Docker\resources\bin`
-   - Restart terminal after PATH change
-
-### "Volume mount failed" Error
-
-**Cause**: Incorrect volume mount syntax or permissions
-
-**Solution**:
-- Windows PowerShell: `${PWD}:/work`
-- Windows CMD: `%cd%:/work`
-- Linux/macOS: `$(pwd):/work`
-- Ensure you're in correct directory with your files
-
-### "No files found" in Container
-
-**Cause**: Volume mount not applied or wrong path
-
-**Solution**:
-1. Check current directory: `pwd` or `cd`
-2. Verify files exist: `ls terraform/`
-3. Use correct volume mount flag: `-v "$(pwd):/work"`
-
-### Scanner Not Finding Issues
-
-**Cause**: May be testing against clean code or tool version issue
-
-**Solution**:
-1. Test with provided vulnerable files: `test-files/`
-2. Check tool versions: `update-status`
-3. Force update tools: `update-force`
-4. Verify scanner is appropriate for file type
-
-## AI Assistant Guidelines
-
-### When Making Changes
-
-1. **Always read existing files first** before modifying
-2. **Follow existing patterns** in similar files
-3. **Test changes** with provided test files
-4. **Update documentation** when adding features
-5. **Check security implications** of any changes
-
-### Code Modification Best Practices
-
-1. **Scanner Scripts**:
-   - Maintain logging consistency
-   - Preserve error handling patterns
-   - Keep exit code behavior
-   - Update timestamp in outputs
-
-2. **Dockerfile**:
-   - Preserve multi-stage structure
-   - Maintain layer optimization
-   - Test build after changes
-   - Check final image size
-
-3. **Python Helpers**:
-   - Add type hints
-   - Include docstrings
-   - Handle cross-platform differences
-   - Add error handling
-
-### Common Pitfalls to Avoid
-
-1. **Don't break volume mounting** - This is critical functionality
-2. **Don't remove error handling** - Scripts should fail gracefully
-3. **Don't commit credentials** - Check `.gitignore` compliance
-4. **Don't use test files as examples** - They contain vulnerabilities
-5. **Don't skip documentation updates** - Keep README and CLAUDE.md in sync
-
-### Useful File References
-
-- **Scanner pattern**: `scanners/scan-terraform.sh` (most complete example)
-- **Entrypoint logic**: `docker-entrypoint.sh` (command routing)
-- **Path handling**: `helpers/path_detector.py` (cross-platform paths)
-- **Docker commands**: `helpers/docker_manager.py` (command building)
-- **Update system**: `daily-update-manager.sh` (security updates)
-
-## Version History
-
-- **Latest (2025-05-29)**: Multi-stage optimized build with intelligent caching
-- **Image Size**: 1.02GB (35.4% reduction)
-- **Build Time**: ~1.1 minutes (56% improvement)
-- **Security**: 7+ CVEs addressed with auto-update system
-
-## Resources
-
-- **Docker Hub**: https://hub.docker.com/r/spd109/devops-uat
-- **Repository**: (Current repository)
-- **Issues**: GitHub Issues (if applicable)
-- **Documentation**: README.md for user guide
 
 ---
 
-**Last Updated**: 2025-05-29 (Based on repository state at analysis time)
+## Python 2025 Best Practices
 
+### Code Standards
+
+#### 1. Type Hints (Required)
+```python
+from typing import Optional, List, Dict, Any
+from pathlib import Path
+
+def scan_terraform(target: Path, environment: str = "development") -> Dict[str, Any]:
+    """
+    Scan Terraform files for security issues
+
+    Args:
+        target: Path to Terraform file or directory
+        environment: Environment type (development, staging, production)
+
+    Returns:
+        Dictionary containing scan results and statistics
+    """
+    results: Dict[str, Any] = {}
+    return results
+```
+
+#### 2. Modern Path Handling
+```python
+from pathlib import Path
+
+# ✅ GOOD - Use Path objects
+config_file = Path("/app/config.yaml")
+if config_file.exists():
+    content = config_file.read_text(encoding="utf-8")
+
+# ❌ BAD - Don't use os.path
+import os
+config_file = os.path.join("/app", "config.yaml")
+```
+
+#### 3. Dataclasses for Data Structures
+```python
+from dataclasses import dataclass
+from typing import Optional
+
+@dataclass
+class ScanResult:
+    """Represents a security scan result"""
+    severity: str
+    message: str
+    resource: str
+    line_number: Optional[int] = None
+
+    def is_critical(self) -> bool:
+        return self.severity == "CRITICAL"
+```
+
+#### 4. Context Managers
+```python
+from pathlib import Path
+
+# ✅ GOOD - Auto-cleanup with context manager
+def write_report(file_path: Path, content: str) -> None:
+    with file_path.open('w', encoding='utf-8') as f:
+        f.write(content)
+
+# ❌ BAD - Manual file handling
+f = open(file_path, 'w')
+f.write(content)
+f.close()
+```
+
+#### 5. F-Strings for Formatting
+```python
+# ✅ GOOD - F-strings (Python 3.6+)
+name = "terraform"
+version = "1.5.0"
+message = f"Scanning {name} version {version}"
+
+# ❌ BAD - Old string formatting
+message = "Scanning %s version %s" % (name, version)
+message = "Scanning {} version {}".format(name, version)
+```
+
+#### 6. List/Dict Comprehensions
+```python
+# ✅ GOOD - Comprehensions
+critical_issues = [issue for issue in issues if issue.severity == "CRITICAL"]
+issue_counts = {severity: len([i for i in issues if i.severity == severity])
+                for severity in ["LOW", "MEDIUM", "HIGH", "CRITICAL"]}
+
+# ❌ BAD - Loops for simple transformations
+critical_issues = []
+for issue in issues:
+    if issue.severity == "CRITICAL":
+        critical_issues.append(issue)
+```
+
+#### 7. Modern Error Handling
+```python
+from typing import Optional
+
+# ✅ GOOD - Specific exceptions with context
+def load_config(path: Path) -> Optional[dict]:
+    try:
+        return json.loads(path.read_text())
+    except FileNotFoundError:
+        logger.error(f"Config file not found: {path}")
+        return None
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in {path}: {e}")
+        return None
+
+# ❌ BAD - Bare except
+try:
+    config = json.loads(path.read_text())
+except:
+    return None
+```
+
+#### 8. Enum for Constants
+```python
+from enum import Enum, auto
+
+class Severity(Enum):
+    """Security issue severity levels"""
+    LOW = auto()
+    MEDIUM = auto()
+    HIGH = auto()
+    CRITICAL = auto()
+
+# Usage
+if issue.severity == Severity.CRITICAL:
+    alert_security_team()
+```
+
+#### 9. Async/Await for I/O Operations
+```python
+import asyncio
+import aiohttp
+
+async def fetch_pricing_data(url: str) -> dict:
+    """Fetch pricing data asynchronously"""
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()
+
+# Run multiple requests concurrently
+async def get_all_pricing():
+    aws_task = fetch_pricing_data(aws_url)
+    azure_task = fetch_pricing_data(azure_url)
+    gcp_task = fetch_pricing_data(gcp_url)
+
+    results = await asyncio.gather(aws_task, azure_task, gcp_task)
+    return results
+```
+
+#### 10. Structural Pattern Matching (Python 3.10+)
+```python
+def handle_scan_result(result: dict) -> str:
+    match result:
+        case {"severity": "CRITICAL", "auto_fix": True}:
+            return apply_auto_fix(result)
+        case {"severity": "CRITICAL"}:
+            return alert_and_log(result)
+        case {"severity": "HIGH" | "MEDIUM"}:
+            return log_warning(result)
+        case _:
+            return log_info(result)
+```
+
+### Code Organization
+
+#### Module Structure
+```python
+"""
+Module docstring explaining purpose
+
+Example:
+    from devops_universal_scanner.core.scanner import Scanner
+
+    scanner = Scanner("terraform", Path("./infra"))
+    results = scanner.scan()
+"""
+
+# Standard library imports
+import sys
+from pathlib import Path
+from typing import Optional, List
+
+# Third-party imports
+import boto3
+import yaml
+
+# Local imports
+from devops_universal_scanner.core.logger import ScanLogger
+from devops_universal_scanner.core.tool_runner import ToolRunner
+
+# Module-level constants
+DEFAULT_TIMEOUT = 300
+MAX_RETRIES = 3
+
+# Classes and functions
+class Scanner:
+    ...
+```
+
+#### Docstrings (Google Style)
+```python
+def analyze_costs(resources: List[dict], region: str = "us-east-1") -> Dict[str, float]:
+    """
+    Analyze infrastructure costs for given resources.
+
+    Calculates monthly, weekly, daily, and hourly costs using live pricing
+    APIs when available, falling back to static estimates.
+
+    Args:
+        resources: List of infrastructure resources to analyze
+        region: AWS region for pricing data (default: us-east-1)
+
+    Returns:
+        Dictionary with cost breakdowns:
+            - monthly_cost: Total monthly cost in USD
+            - weekly_cost: Average weekly cost in USD
+            - daily_cost: Average daily cost in USD
+            - hourly_cost: Average hourly cost in USD
+
+    Raises:
+        ValueError: If resources list is empty
+        PricingAPIError: If pricing API fails and no fallback available
+
+    Example:
+        >>> resources = [{"type": "aws_instance", "instance_type": "t3.large"}]
+        >>> costs = analyze_costs(resources, region="us-west-2")
+        >>> print(f"Monthly: ${costs['monthly_cost']:.2f}")
+        Monthly: $60.74
+    """
+    if not resources:
+        raise ValueError("Resources list cannot be empty")
+    # Implementation...
+```
+
+### Performance Best Practices
+
+#### 1. Use Generators for Large Datasets
+```python
+# ✅ GOOD - Generator for memory efficiency
+def read_large_file(path: Path):
+    with path.open('r') as f:
+        for line in f:
+            yield line.strip()
+
+# ❌ BAD - Loading entire file into memory
+def read_large_file(path: Path):
+    with path.open('r') as f:
+        return f.readlines()
+```
+
+#### 2. Cache Expensive Operations
+```python
+from functools import lru_cache
+from typing import Optional
+
+@lru_cache(maxsize=128)
+def get_pricing_data(instance_type: str, region: str) -> Optional[float]:
+    """Cache pricing lookups for 1 hour"""
+    return fetch_from_api(instance_type, region)
+```
+
+#### 3. Use Sets for Membership Testing
+```python
+# ✅ GOOD - O(1) lookup
+gpu_instances = {"p3.2xlarge", "p4d.24xlarge", "g5.xlarge"}
+if instance_type in gpu_instances:
+    analyze_gpu_costs()
+
+# ❌ BAD - O(n) lookup
+gpu_instances = ["p3.2xlarge", "p4d.24xlarge", "g5.xlarge"]
+if instance_type in gpu_instances:
+    analyze_gpu_costs()
+```
+
+### Security Best Practices
+
+#### 1. Never Hardcode Credentials
+```python
+import os
+from typing import Optional
+
+# ✅ GOOD - Environment variables
+def get_aws_credentials() -> tuple[Optional[str], Optional[str]]:
+    access_key = os.getenv("AWS_ACCESS_KEY_ID")
+    secret_key = os.getenv("AWS_SECRET_ACCESS_KEY")
+    return access_key, secret_key
+
+# ❌ BAD - Hardcoded
+AWS_KEY = "AKIAIOSFODNN7EXAMPLE"  # NEVER DO THIS
+```
+
+#### 2. Validate Input
+```python
+from pathlib import Path
+
+def scan_file(target: Path) -> dict:
+    """Scan a file for security issues"""
+    # Validate input exists
+    if not target.exists():
+        raise FileNotFoundError(f"Target not found: {target}")
+
+    # Validate it's a file
+    if not target.is_file():
+        raise ValueError(f"Target must be a file: {target}")
+
+    # Prevent directory traversal
+    target = target.resolve()
+    if not str(target).startswith("/work"):
+        raise SecurityError("Access denied: outside work directory")
+
+    # Proceed with scan
+    return perform_scan(target)
+```
+
+#### 3. Sanitize Subprocess Commands
+```python
+import subprocess
+import shlex
+
+# ✅ GOOD - List arguments (no shell injection)
+def run_tool(file_path: Path) -> subprocess.CompletedProcess:
+    return subprocess.run(
+        ["checkov", "-f", str(file_path)],
+        capture_output=True,
+        text=True,
+        timeout=300
+    )
+
+# ❌ BAD - String command with shell=True
+def run_tool(file_path: str):
+    return subprocess.run(
+        f"checkov -f {file_path}",  # VULNERABLE TO INJECTION!
+        shell=True,
+        capture_output=True
+    )
+```
+
+### Testing Best Practices
+
+#### 1. Write Testable Code
+```python
+# ✅ GOOD - Dependency injection
+class Scanner:
+    def __init__(self, tool_runner: ToolRunner, logger: ScanLogger):
+        self.tool_runner = tool_runner
+        self.logger = logger
+
+    def scan(self, target: Path) -> dict:
+        result = self.tool_runner.run_checkov(target)
+        self.logger.message(f"Scanned {target}")
+        return result
+
+# Easy to test with mocks
+def test_scanner():
+    mock_runner = Mock(spec=ToolRunner)
+    mock_logger = Mock(spec=ScanLogger)
+    scanner = Scanner(mock_runner, mock_logger)
+    # Test...
+```
+
+#### 2. Use Type Hints for Better Testing
+```python
+from typing import Protocol
+
+class ToolRunnerProtocol(Protocol):
+    """Interface for tool runners"""
+    def run_checkov(self, target: Path) -> dict: ...
+    def run_tflint(self, target: Path) -> dict: ...
+
+# Any class implementing this protocol can be used
+class Scanner:
+    def __init__(self, tool_runner: ToolRunnerProtocol):
+        self.tool_runner = tool_runner
+```
+
+---
+
+## Code Review Checklist
+
+When modifying code, ensure:
+
+- [ ] **Type hints** on all function signatures
+- [ ] **Docstrings** with Args, Returns, Raises sections
+- [ ] **Path objects** instead of string paths
+- [ ] **F-strings** for formatting
+- [ ] **Context managers** for resource cleanup
+- [ ] **Specific exceptions** (not bare except)
+- [ ] **Input validation** for security
+- [ ] **No hardcoded credentials**
+- [ ] **Async/await** for I/O-bound operations
+- [ ] **Generators** for large datasets
+- [ ] **Caching** for expensive operations
+- [ ] **List arguments** in subprocess calls (no shell=True)
+- [ ] **Logging** at appropriate levels
+- [ ] **Error messages** are helpful and actionable
+- [ ] **No duplicate code** - DRY principle
+
+---
+
+## Common Patterns in This Codebase
+
+### 1. Scanner Pattern
+```python
+class Scanner:
+    """Main orchestrator for all scan types"""
+
+    def __init__(self, scan_type: str, target: Path, environment: str = "development"):
+        self.scan_type = scan_type
+        self.target = target
+        self.environment = environment
+        self.logger = ScanLogger(self._get_log_file())
+        self.tool_runner = ToolRunner(self.logger)
+
+    def scan(self) -> int:
+        """Run complete scan and return exit code"""
+        self.logger.section(f"Starting {self.scan_type} scan")
+
+        # Run base tools
+        results = self._run_base_tools()
+
+        # Run native intelligence
+        insights = self._run_native_intelligence()
+
+        # Generate summary
+        self._generate_summary(results, insights)
+
+        return self._calculate_exit_code(results)
+```
+
+### 2. Tool Runner Pattern
+```python
+@dataclass
+class ToolResult:
+    """Result from a tool execution"""
+    tool_name: str
+    exit_code: int
+    stdout: str
+    stderr: str
+    duration: float
+
+class ToolRunner:
+    """Executes base security tools"""
+
+    def run(self, tool_name: str, args: List[str]) -> ToolResult:
+        start = time.time()
+        result = subprocess.run(
+            [tool_name] + args,
+            capture_output=True,
+            text=True,
+            timeout=300
+        )
+        duration = time.time() - start
+
+        return ToolResult(
+            tool_name=tool_name,
+            exit_code=result.returncode,
+            stdout=result.stdout,
+            stderr=result.stderr,
+            duration=duration
+        )
+```
+
+### 3. Knowledge Loader Pattern
+```python
+class PolicyKnowledgeLoader:
+    """Loads policy documentation for offline use"""
+
+    _instance: Optional['PolicyKnowledgeLoader'] = None
+
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+        return cls._instance
+
+    def __init__(self):
+        if not hasattr(self, 'initialized'):
+            self.policies = self._load_policies()
+            self.initialized = True
+
+    def get_policy(self, policy_id: str) -> Optional[PolicyInfo]:
+        return self.policies.get(policy_id)
+```
+
+---
+
+## Extending the Scanner
+
+### Adding a New Analyzer
+
+1. Create module in appropriate subdirectory:
+   ```
+   devops_universal_scanner/core/analyzers/custom/my_analyzer.py
+   ```
+
+2. Follow the analyzer pattern:
+   ```python
+   from typing import Dict, List, Any
+   from pathlib import Path
+
+   class MyAnalyzer:
+       """Custom analyzer for X"""
+
+       def __init__(self):
+           self.findings: List[Dict[str, Any]] = []
+
+       def analyze(self, resources: List[dict]) -> Dict[str, Any]:
+           """Analyze resources and return insights"""
+           for resource in resources:
+               if self._check_condition(resource):
+                   self.findings.append({
+                       "severity": "HIGH",
+                       "message": "Found issue in resource",
+                       "resource": resource['name']
+                   })
+
+           return {
+               "findings": self.findings,
+               "summary": self._generate_summary()
+           }
+   ```
+
+3. Import in scanner.py and call in `_run_native_intelligence()`
+
+### Adding a Custom Rule
+
+1. Add to `core/knowledge/custom_rules.py`:
+   ```python
+   @dataclass
+   class CustomRule:
+       id: str
+       name: str
+       description: str
+       severity: str
+       resource_pattern: str  # Regex
+       check_function: callable
+       framework: str
+
+   # Register in CustomRulesEngine
+   engine.register_rule(CustomRule(
+       id="CKV_CUSTOM_XXX_001",
+       name="My custom rule",
+       description="Checks for X",
+       severity="MEDIUM",
+       resource_pattern=r"aws_.*",
+       check_function=my_check_function,
+       framework="terraform"
+   ))
+   ```
+
+---
+
+## Debugging Tips
+
+### 1. Enable Verbose Logging
+```python
+logger.setLevel(logging.DEBUG)
+```
+
+### 2. Test Individual Components
+```python
+# Test tool runner directly
+from devops_universal_scanner.core.tool_runner import ToolRunner
+from devops_universal_scanner.core.logger import ScanLogger
+
+logger = ScanLogger()
+runner = ToolRunner(logger)
+result = runner.run_checkov(Path("./test.tf"))
+print(result)
+```
+
+### 3. Use Python Debugger
+```python
+import pdb
+
+def problematic_function():
+    pdb.set_trace()  # Debugger stops here
+    # Step through code
+```
+
+---
+
+## Troubleshooting Common Issues
+
+### Import Errors
+```python
+# ❌ ERROR: ModuleNotFoundError: No module named 'core'
+from core.scanner import Scanner
+
+# ✅ FIX: Use full package path
+from devops_universal_scanner.core.scanner import Scanner
+```
+
+### Path Issues
+```python
+# ❌ ERROR: File not found (relative path issue)
+config = Path("config.yaml")
+
+# ✅ FIX: Use absolute or package-relative paths
+config = Path(__file__).parent / "config.yaml"
+```
+
+### Docker Build Issues
+```bash
+# Ensure you're in the repository root
+cd /home/user/devops-universal-scanner
+
+# Build with proper context
+docker build -t devops-scanner:v3 .
+
+# Check PYTHONPATH in container
+docker run --rm devops-scanner:v3 python3 -c "import sys; print(sys.path)"
+```
+
+---
+
+## Version Control
+
+### Commit Message Format
+```
+<type>: <short description>
+
+<detailed description>
+
+<footer>
+```
+
+**Types**:
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation only
+- `refactor`: Code refactoring
+- `perf`: Performance improvement
+- `test`: Adding tests
+- `chore`: Maintenance
+
+**Example**:
+```
+feat: Add GPU cost optimization analyzer
+
+- Created GPUCostAnalyzer in core/analyzers/aiml/
+- Detects P3, P4, G4, G5 instances
+- Recommends spot instances for 70-90% savings
+- Includes GPU-specific optimization strategies
+
+Closes #123
+```
+
+---
+
+**Version**: 3.0.0
+**Python**: 3.13+
+**Last Updated**: 2025-11-18
 **Maintained By**: DevOps Security Team
-
-**AI Assistant Note**: This guide is specifically designed to help AI assistants understand the codebase architecture, conventions, and workflows. When in doubt, refer to existing code patterns and maintain consistency with established conventions.
