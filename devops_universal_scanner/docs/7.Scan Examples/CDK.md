@@ -77,7 +77,7 @@ cfnBucket.cfnOptions.metadata = {
   }
 }
 ```
-The metadata secution contain 1 skip for CKV_AWS_18
+The metadata section contain 1 skip for CKV_AWS_18
 Run the `cdk synth` command to generate a CloudFormation template and scan it
 ```json
 {
