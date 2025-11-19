@@ -126,7 +126,142 @@ class CostAnalyzer:
                 "body": resource_body,
             })
 
+            # Extract Azure managed disks from VM resources
+            if resource_type in ["azurerm_virtual_machine", "azurerm_linux_virtual_machine", "azurerm_windows_virtual_machine"]:
+                self._extract_azure_disks(resource_body, resource_name, resources)
+
+            # Extract GCP attached disks from compute instances
+            if resource_type == "google_compute_instance":
+                self._extract_gcp_disks(resource_body, resource_name, resources)
+
+            # Extract AWS EBS volumes from EC2 instances
+            if resource_type == "aws_instance":
+                self._extract_aws_ebs_from_terraform(resource_body, resource_name, resources)
+
         return resources
+
+    def _extract_azure_disks(self, resource_body: str, parent_name: str, resources: List[Dict[str, Any]]):
+        """Extract Azure managed disks from VM resource body"""
+        # Extract OS disk
+        os_disk_match = re.search(r'os_disk\s*\{([^}]+)\}', resource_body)
+        if os_disk_match:
+            os_disk_body = os_disk_match.group(1)
+            disk_size_match = re.search(r'disk_size_gb\s*=\s*(\d+)', os_disk_body)
+            storage_type_match = re.search(r'storage_account_type\s*=\s*"([^"]+)"', os_disk_body)
+
+            if disk_size_match:
+                disk_size = int(disk_size_match.group(1))
+                storage_type = storage_type_match.group(1) if storage_type_match else "Standard_LRS"
+
+                resources.append({
+                    "type": "azurerm_managed_disk",
+                    "name": f"{parent_name}_os_disk",
+                    "instance_type": None,
+                    "body": "",
+                    "disk_size_gb": disk_size,
+                    "storage_type": storage_type,
+                })
+
+        # Extract data disks
+        for idx, data_disk_match in enumerate(re.finditer(r'data_disk\s*\{([^}]+)\}', resource_body)):
+            data_disk_body = data_disk_match.group(1)
+            disk_size_match = re.search(r'disk_size_gb\s*=\s*(\d+)', data_disk_body)
+            storage_type_match = re.search(r'storage_account_type\s*=\s*"([^"]+)"', data_disk_body)
+
+            if disk_size_match:
+                disk_size = int(disk_size_match.group(1))
+                storage_type = storage_type_match.group(1) if storage_type_match else "Standard_LRS"
+
+                resources.append({
+                    "type": "azurerm_managed_disk",
+                    "name": f"{parent_name}_data_disk_{idx}",
+                    "instance_type": None,
+                    "body": "",
+                    "disk_size_gb": disk_size,
+                    "storage_type": storage_type,
+                })
+
+    def _extract_gcp_disks(self, resource_body: str, parent_name: str, resources: List[Dict[str, Any]]):
+        """Extract GCP persistent disks from compute instance resource body"""
+        # Extract boot disk
+        boot_disk_match = re.search(r'boot_disk\s*\{([^}]+)\}', resource_body)
+        if boot_disk_match:
+            boot_disk_body = boot_disk_match.group(1)
+            size_match = re.search(r'size\s*=\s*(\d+)', boot_disk_body)
+            type_match = re.search(r'type\s*=\s*"([^"]+)"', boot_disk_body)
+
+            if size_match:
+                disk_size = int(size_match.group(1))
+                disk_type = type_match.group(1) if type_match else "pd-standard"
+
+                resources.append({
+                    "type": "google_compute_disk",
+                    "name": f"{parent_name}_boot_disk",
+                    "instance_type": None,
+                    "body": "",
+                    "disk_size_gb": disk_size,
+                    "disk_type": disk_type,
+                })
+
+        # Extract attached disks
+        for idx, attached_disk_match in enumerate(re.finditer(r'attached_disk\s*\{([^}]+)\}', resource_body)):
+            attached_disk_body = attached_disk_match.group(1)
+            size_match = re.search(r'size\s*=\s*(\d+)', attached_disk_body)
+            type_match = re.search(r'type\s*=\s*"([^"]+)"', attached_disk_body)
+
+            if size_match:
+                disk_size = int(size_match.group(1))
+                disk_type = type_match.group(1) if type_match else "pd-standard"
+
+                resources.append({
+                    "type": "google_compute_disk",
+                    "name": f"{parent_name}_attached_disk_{idx}",
+                    "instance_type": None,
+                    "body": "",
+                    "disk_size_gb": disk_size,
+                    "disk_type": disk_type,
+                })
+
+    def _extract_aws_ebs_from_terraform(self, resource_body: str, parent_name: str, resources: List[Dict[str, Any]]):
+        """Extract AWS EBS volumes from Terraform EC2 instance resource body"""
+        # Extract root block device
+        root_block_match = re.search(r'root_block_device\s*\{([^}]+)\}', resource_body)
+        if root_block_match:
+            root_block_body = root_block_match.group(1)
+            volume_size_match = re.search(r'volume_size\s*=\s*(\d+)', root_block_body)
+            volume_type_match = re.search(r'volume_type\s*=\s*"([^"]+)"', root_block_body)
+
+            if volume_size_match:
+                volume_size = int(volume_size_match.group(1))
+                volume_type = volume_type_match.group(1) if volume_type_match else "gp2"
+
+                resources.append({
+                    "type": "aws_ebs_volume",
+                    "name": f"{parent_name}_root_volume",
+                    "instance_type": None,
+                    "body": "",
+                    "volume_size": volume_size,
+                    "volume_type": volume_type,
+                })
+
+        # Extract EBS block devices
+        for idx, ebs_block_match in enumerate(re.finditer(r'ebs_block_device\s*\{([^}]+)\}', resource_body)):
+            ebs_block_body = ebs_block_match.group(1)
+            volume_size_match = re.search(r'volume_size\s*=\s*(\d+)', ebs_block_body)
+            volume_type_match = re.search(r'volume_type\s*=\s*"([^"]+)"', ebs_block_body)
+
+            if volume_size_match:
+                volume_size = int(volume_size_match.group(1))
+                volume_type = volume_type_match.group(1) if volume_type_match else "gp2"
+
+                resources.append({
+                    "type": "aws_ebs_volume",
+                    "name": f"{parent_name}_ebs_{idx}",
+                    "instance_type": None,
+                    "body": "",
+                    "volume_size": volume_size,
+                    "volume_type": volume_type,
+                })
 
     def _extract_cloudformation_resources(self, content: str, parameters: Dict[str, Any] = None) -> List[Dict[str, Any]]:
         """Extract resources from CloudFormation template"""
@@ -191,6 +326,46 @@ class CostAnalyzer:
                     "properties": properties,
                     "cf_type": resource_type,
                 })
+
+                # Extract EBS volumes from BlockDeviceMappings
+                # This applies to EC2 instances, Launch Configurations, Launch Templates, EKS Nodegroups
+                resources_with_block_devices = [
+                    "AWS::EC2::Instance",
+                    "AWS::AutoScaling::LaunchConfiguration",
+                    "AWS::EC2::LaunchTemplate",
+                    "AWS::Batch::ComputeEnvironment"
+                ]
+
+                if resource_type in resources_with_block_devices:
+                    # Handle both direct BlockDeviceMappings and nested in LaunchTemplateData
+                    block_devices = properties.get("BlockDeviceMappings", [])
+
+                    # For Launch Templates, check LaunchTemplateData
+                    if resource_type == "AWS::EC2::LaunchTemplate":
+                        launch_template_data = properties.get("LaunchTemplateData", {})
+                        block_devices = launch_template_data.get("BlockDeviceMappings", [])
+
+                    for idx, mapping in enumerate(block_devices):
+                        if "Ebs" in mapping:
+                            ebs_props = mapping["Ebs"]
+                            volume_size = ebs_props.get("VolumeSize", 0)
+                            volume_type = ebs_props.get("VolumeType", "gp2")
+
+                            # Skip if volume size is 0 or not specified
+                            if volume_size > 0:
+                                # Add as separate EBS volume resource
+                                resources.append({
+                                    "type": "aws_ebs_volume",
+                                    "name": f"{resource_name}_ebs_{idx}",
+                                    "instance_type": None,
+                                    "properties": {
+                                        "VolumeSize": volume_size,
+                                        "VolumeType": volume_type
+                                    },
+                                    "cf_type": "AWS::EC2::Volume",
+                                    "volume_size": volume_size,
+                                    "volume_type": volume_type,
+                                })
 
         except Exception as e:
             # If parsing fails, return empty list
@@ -309,7 +484,13 @@ class CostAnalyzer:
                 is_free = self._is_free_aws_service(cf_type)
 
             # Get cost estimate and detailed breakdown
-            monthly_cost, cost_components = self._get_resource_cost_detailed(resource_type, instance_type)
+            # Pass volume info for EBS volumes
+            if resource_type == "aws_ebs_volume":
+                volume_size = resource.get("volume_size", 0)
+                volume_type = resource.get("volume_type", "gp2")
+                monthly_cost, cost_components = self._get_ebs_cost_detailed(volume_type, volume_size)
+            else:
+                monthly_cost, cost_components = self._get_resource_cost_detailed(resource_type, instance_type)
 
             # Include free services in the breakdown
             if monthly_cost > 0 or is_free:
@@ -352,6 +533,37 @@ class CostAnalyzer:
         """Get monthly cost for a resource (simple version - use _get_resource_cost_detailed for details)"""
         cost, _ = self._get_resource_cost_detailed(resource_type, instance_type)
         return cost
+
+    def _get_ebs_cost_detailed(self, volume_type: str, volume_size: int) -> Tuple[float, Optional[Dict[str, Any]]]:
+        """
+        Get monthly cost for EBS volume with detailed breakdown
+
+        Args:
+            volume_type: EBS volume type (gp2, gp3, io1, io2, st1, sc1)
+            volume_size: Volume size in GB
+
+        Returns:
+            Tuple of (total_monthly_cost, cost_components_dict)
+        """
+        cost_data = AWS_COST_ESTIMATES.get("aws_ebs_volume", {})
+
+        if not cost_data:
+            return 0.0, None
+
+        # Get price per GB-month for volume type
+        price_per_gb = cost_data.get(volume_type, 0.0)
+        monthly_cost = price_per_gb * volume_size
+
+        components = {
+            "storage": {
+                "description": f"{volume_type.upper()} volume",
+                "rate_per_gb": price_per_gb,
+                "size_gb": volume_size,
+                "monthly_cost": monthly_cost
+            }
+        }
+
+        return monthly_cost, components
 
     def _get_resource_cost_detailed(self, resource_type: str, instance_type: Optional[str]) -> Tuple[float, Optional[Dict[str, Any]]]:
         """
@@ -481,8 +693,9 @@ class CostAnalyzer:
                 lines.append("   Cost Components:")
                 for comp_name, comp_data in breakdown.cost_components.items():
                     if "rate_per_gb" in comp_data:
-                        # S3 storage component
-                        lines.append(f"     - {comp_data['description']}: ${comp_data['rate_per_gb']:.3f}/GB × {comp_data['estimated_gb']}GB = ${comp_data['monthly_cost']:.2f}/month")
+                        # Storage component (S3 uses 'estimated_gb', EBS uses 'size_gb')
+                        size_gb = comp_data.get('estimated_gb', comp_data.get('size_gb', 0))
+                        lines.append(f"     - {comp_data['description']}: ${comp_data['rate_per_gb']:.3f}/GB × {size_gb}GB = ${comp_data['monthly_cost']:.2f}/month")
                     elif "note" in comp_data:
                         # Component with note (e.g., free tier)
                         lines.append(f"     - {comp_data['description']}: ${comp_data['monthly_cost']:.2f}/month ({comp_data['note']})")

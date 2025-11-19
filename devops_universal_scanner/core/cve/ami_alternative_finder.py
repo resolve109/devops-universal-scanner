@@ -7,10 +7,9 @@ Features:
 2. Canonical's Ubuntu Cloud Images API for latest Ubuntu AMIs
 3. Region-aware AMI recommendations
 4. Architecture-specific recommendations (x86_64, arm64)
-5. 100% web-based - no fallback databases
+5. Static fallback when APIs unavailable
 """
 
-import requests
 import json
 import re
 from typing import List, Optional, Dict
@@ -18,6 +17,13 @@ from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 import logging
+
+# Optional imports
+try:
+    import requests
+    REQUESTS_AVAILABLE = True
+except ImportError:
+    REQUESTS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
@@ -59,6 +65,31 @@ class AMIAlternativeFinder:
 
     # Canonical Ubuntu Cloud Images API
     UBUNTU_CLOUD_IMAGES_API = "https://cloud-images.ubuntu.com/locator/ec2/releasesTable"
+
+    # Static fallback AMI database (updated 2025-01)
+    # Used when boto3 and requests are unavailable
+    STATIC_AMI_DATABASE = {
+        "us-east-1": {
+            "amazon_linux_2023_x86_64": "ami-0c02fb55c47d2f8f5",
+            "amazon_linux_2_x86_64": "ami-0c101f26f147fa7fd",
+            "ubuntu_24_04_x86_64": "ami-0e2c8caa4b6378d8c",
+            "ubuntu_22_04_x86_64": "ami-0c7217cdde317cfec",
+        },
+        "us-west-2": {
+            "amazon_linux_2023_x86_64": "ami-0c94855ba95c574c8",
+            "amazon_linux_2_x86_64": "ami-0d081196e3df05f4d",
+            "ubuntu_24_04_x86_64": "ami-0aff18ec83b712f05",
+            "ubuntu_22_04_x86_64": "ami-03f65b8614a860c29",
+        },
+        "us-east-2": {
+            "amazon_linux_2023_x86_64": "ami-0ea3c35c5c3284d82",
+            "ubuntu_22_04_x86_64": "ami-0fb653ca2d3203ac1",
+        },
+        "eu-west-1": {
+            "amazon_linux_2023_x86_64": "ami-0d71ea30463e0ff8d",
+            "ubuntu_22_04_x86_64": "ami-0905a3c97561e0b69",
+        },
+    }
 
     def __init__(self, region: str = "us-east-1"):
         """
@@ -111,24 +142,25 @@ class AMIAlternativeFinder:
                 logger.debug(f"SSM parameter fetch failed: {e}")
 
         # Fallback to HTTP request to AWS SSM public API
-        try:
-            # AWS SSM has a public HTTP endpoint we can query
-            url = f"https://ssm.{self.region}.amazonaws.com/"
-            params = {
-                'Action': 'GetParameter',
-                'Name': parameter_path,
-                'Version': '2014-11-06'
-            }
-            response = requests.get(url, params=params, timeout=5)
-            if response.status_code == 200:
-                # Parse XML response for AMI ID
-                ami_match = re.search(r'ami-[a-f0-9]{8,17}', response.text)
-                if ami_match:
-                    ami_id = ami_match.group(0)
-                    logger.debug(f"Got AMI from SSM HTTP: {ami_id}")
-                    return ami_id
-        except Exception as e:
-            logger.debug(f"HTTP SSM fetch failed: {e}")
+        if REQUESTS_AVAILABLE:
+            try:
+                # AWS SSM has a public HTTP endpoint we can query
+                url = f"https://ssm.{self.region}.amazonaws.com/"
+                params = {
+                    'Action': 'GetParameter',
+                    'Name': parameter_path,
+                    'Version': '2014-11-06'
+                }
+                response = requests.get(url, params=params, timeout=5)
+                if response.status_code == 200:
+                    # Parse XML response for AMI ID
+                    ami_match = re.search(r'ami-[a-f0-9]{8,17}', response.text)
+                    if ami_match:
+                        ami_id = ami_match.group(0)
+                        logger.debug(f"Got AMI from SSM HTTP: {ami_id}")
+                        return ami_id
+            except Exception as e:
+                logger.debug(f"HTTP SSM fetch failed: {e}")
 
         return None
 
@@ -168,11 +200,26 @@ class AMIAlternativeFinder:
                 ))
 
         # Try Canonical Ubuntu Cloud Images API for Ubuntu
-        if "ubuntu" in distribution and len(alternatives) < count:
+        if "ubuntu" in distribution and len(alternatives) < count and REQUESTS_AVAILABLE:
             ubuntu_amis = self._get_ubuntu_amis_from_web(distribution, architecture)
             alternatives.extend(ubuntu_amis[:(count - len(alternatives))])
 
-        # If no matches, provide popular alternatives from web
+        # If still no results, try static fallback database
+        if not alternatives and self.region in self.STATIC_AMI_DATABASE:
+            region_amis = self.STATIC_AMI_DATABASE[self.region]
+            if key in region_amis:
+                alternatives.append(AMIAlternative(
+                    ami_id=region_amis[key],
+                    name=self._get_friendly_name(distribution),
+                    distribution=self._get_friendly_name(distribution),
+                    version="Latest",
+                    region=self.region,
+                    architecture=architecture,
+                    last_updated="2025-01-15",
+                    source="Static Fallback Database"
+                ))
+
+        # If still no matches, provide popular alternatives
         if not alternatives:
             alternatives.extend(self._get_popular_alternatives(architecture))
 
@@ -190,6 +237,10 @@ class AMIAlternativeFinder:
             List of AMIAlternative objects
         """
         alternatives = []
+
+        if not REQUESTS_AVAILABLE:
+            logger.debug("requests not available - cannot fetch Ubuntu AMIs from web")
+            return alternatives
 
         try:
             # Canonical provides a JSON endpoint with current AMIs
@@ -260,12 +311,13 @@ class AMIAlternativeFinder:
         Tries multiple sources:
         1. Amazon Linux 2023 from AWS SSM
         2. Ubuntu 22.04 LTS from AWS SSM or Canonical API
+        3. Static fallback if all APIs fail
 
         Args:
             architecture: CPU architecture
 
         Returns:
-            List of AMIAlternative objects from live sources
+            List of AMIAlternative objects
         """
         popular = []
 
@@ -303,9 +355,38 @@ class AMIAlternativeFinder:
                     ))
 
         # 3. If still no results, try Ubuntu from Canonical API
-        if not popular:
+        if not popular and REQUESTS_AVAILABLE:
             ubuntu_amis = self._get_ubuntu_amis_from_web("ubuntu_22_04", architecture)
             popular.extend(ubuntu_amis[:2])
+
+        # 4. If all APIs failed, use static fallback database
+        if not popular and self.region in self.STATIC_AMI_DATABASE:
+            region_amis = self.STATIC_AMI_DATABASE[self.region]
+            # Add Amazon Linux 2023
+            if al2023_key in region_amis:
+                popular.append(AMIAlternative(
+                    ami_id=region_amis[al2023_key],
+                    name="Amazon Linux 2023 (Recommended)",
+                    distribution="Amazon Linux 2023",
+                    version="Latest",
+                    region=self.region,
+                    architecture=architecture,
+                    last_updated="2025-01-15",
+                    source="Static Fallback Database"
+                ))
+            # Add Ubuntu 22.04
+            ubuntu_key = f"ubuntu_22_04_{architecture}"
+            if ubuntu_key in region_amis and len(popular) < 2:
+                popular.append(AMIAlternative(
+                    ami_id=region_amis[ubuntu_key],
+                    name="Ubuntu Server 22.04 LTS",
+                    distribution="Ubuntu Server 22.04 LTS",
+                    version="22.04",
+                    region=self.region,
+                    architecture=architecture,
+                    last_updated="2025-01-15",
+                    source="Static Fallback Database"
+                ))
 
         return popular
 
