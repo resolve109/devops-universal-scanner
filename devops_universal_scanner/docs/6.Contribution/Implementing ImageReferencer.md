@@ -7,7 +7,7 @@ Those files can naturally have a misconfig and reference an image with a vulnera
 When using checkov with API token, checkov gets that capability to perform image scanning and utilize Prisma cloud compute vulnerability DB.
 If `ImageReferencer` is derived by a `Runner`than referenced images in an IaC file can be scanned for vulnerabilities.
 
-## Would container images are scanned automatically? 
+## Will container images be scanned automatically? 
 Yes, If the `--framework` `sca_image` is not excluded from the execution scope, an API token is provided.
 The automatic scanning is happening thanks to the registration process for any Derived class of ImageReferencers that occurs in `RunnerRegistry` init.    
 Implementing image referencer will mean scan results will take additional time since images are being pulled.
