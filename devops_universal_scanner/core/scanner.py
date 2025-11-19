@@ -229,15 +229,8 @@ class Scanner:
             # Get pricing status
             pricing_status = self.pricing_api.get_pricing_status()
 
-            # Generate reports (Tool CVE report removed)
-            # self.logger.tool_output(self.tool_cve_scanner.generate_report())  # Removed: Tool CVE scanning
-
-            if ami_cves:
-                self.logger.tool_output(self.ami_cve_scanner.generate_report())
-
-            if image_cves:
-                self.logger.tool_output(self.image_cve_scanner.generate_report())
-
+            # Generate reports in logical order:
+            # 1. COST ANALYSIS SECTION (all cost-related outputs together)
             if cost_breakdowns:
                 self.logger.tool_output(self.cost_analyzer.generate_cost_report())
                 self.logger.tool_output("")
@@ -258,8 +251,15 @@ class Scanner:
             if idle_warnings:
                 self.logger.tool_output(self.idle_detector.generate_idle_report())
 
+            # 2. SECURITY SECTION (all security-related outputs together)
             if security_insights:
                 self.logger.tool_output(self.security_checker.generate_security_report())
+
+            if ami_cves:
+                self.logger.tool_output(self.ami_cve_scanner.generate_report())
+
+            if image_cves:
+                self.logger.tool_output(self.image_cve_scanner.generate_report())
 
             self.logger.info("Cost analysis completed")
 

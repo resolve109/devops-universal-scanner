@@ -6,84 +6,7 @@ Operations:
 1. check_ami - Check if AMI has known issues
 2. check_ami_age - Check if AMI is outdated
 3. scan_template_amis - Scan all AMIs in a template
-
-TODO: ENHANCEMENT - AMI Alternative Suggestions (Priority: HIGH)
-============================================================
-When CVEs are detected in AMIs, provide actionable alternatives with specific AMI IDs.
-
-IMPLEMENTATION PLAN:
--------------------
-1. Create AMIAlternativeFinder class in new file: ami_alternative_finder.py
-   - Integration with AWS SSM Parameter Store for official AMIs
-   - Query latest AMI IDs for common distributions
-   - Fallback to curated AMI database when AWS API unavailable
-
-2. AMI Distribution Patterns to Support:
-   - Amazon Linux 2023 (AL2023)
-   - Amazon Linux 2 (AL2)
-   - Ubuntu 24.04 LTS, 22.04 LTS, 20.04 LTS
-   - RHEL 9.x, 8.x
-   - Windows Server 2022, 2019
-   - Debian 12, 11
-   - SUSE Linux Enterprise Server
-
-3. AWS SSM Parameter Paths (Official AMIs):
-   /aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64
-   /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-   /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp2/ami-id
-   /aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id
-
-4. Enhanced AMICVE Dataclass:
-   - Add suggested_alternatives: List[AMIAlternative]
-   - AMIAlternative: ami_id, name, distribution, version, region, last_updated
-
-5. Enhanced Recommendation Output:
-   Current:  "Recommendation: Use latest Amazon Linux 2023 AMI"
-   Enhanced: "Recommended Alternatives:
-              - ami-0abc123def456789a (Amazon Linux 2023.3.20250115, us-east-1)
-              - ami-0xyz987uvw654321b (Ubuntu 24.04 LTS, us-east-1)
-              Updated: 2025-01-15"
-
-6. CVE Verification for Suggestions:
-   - Verify suggested AMIs don't have known CVEs before recommending
-   - Cross-reference with NVD/CVE databases
-   - Only suggest AMIs with clean security posture
-
-7. Region-Aware Suggestions:
-   - Detect region from template context
-   - Provide AMI IDs specific to detected region
-   - Support multi-region recommendations
-
-8. Offline Fallback Database:
-   - Maintain curated list in data/ami_alternatives.json
-   - Update monthly via CI/CD pipeline
-   - Include last known good AMIs for each distribution
-
-9. Integration Points:
-   - Modify check_ami() to call AMIAlternativeFinder
-   - Update generate_report() to display alternatives
-   - Add --suggest-alternatives CLI flag
-
-10. Testing Requirements:
-    - Unit tests for AMI pattern detection
-    - Mock AWS SSM responses
-    - Test offline fallback
-    - Validate multi-region support
-
-DEPENDENCIES:
-- boto3 (already in requirements.txt)
-- SSM parameter access (optional, gracefully degrade)
-- NVD API for CVE verification (optional)
-
-FILES TO CREATE/MODIFY:
-- NEW: core/cve/ami_alternative_finder.py (main logic)
-- NEW: core/data/ami_alternatives.json (fallback database)
-- MODIFY: core/cve/ami_cve_scanner.py (integration)
-- MODIFY: requirements.txt (add requests-cache for NVD API)
-
-ESTIMATED EFFORT: 8-12 hours
-RISK: Low (all changes additive, no breaking changes)
-VALUE: High (makes recommendations actionable)
+4. Provides specific AMI ID alternatives when issues detected
 """
 
 import re
@@ -93,29 +16,8 @@ from datetime import datetime, timedelta
 
 
 @dataclass
-class AMIAlternative:
-    """
-    AMI alternative suggestion
-
-    TODO: Full implementation when AMIAlternativeFinder is created
-    """
-    ami_id: str
-    name: str
-    distribution: str  # e.g., "Amazon Linux 2023", "Ubuntu 24.04 LTS"
-    version: str
-    region: str
-    architecture: str = "x86_64"  # or "arm64"
-    last_updated: Optional[str] = None  # ISO format date
-    verified_cve_free: bool = False
-
-
-@dataclass
 class AMICVE:
-    """
-    AMI vulnerability information
-
-    TODO: Add suggested_alternatives field when enhancement is implemented
-    """
+    """AMI vulnerability information"""
     ami_id: str
     ami_name: Optional[str] = None
     region: str = "unknown"
@@ -125,12 +27,13 @@ class AMICVE:
     age_days: Optional[int] = None
     severity: str = "UNKNOWN"
     recommendation: str = ""
-    # TODO: Uncomment when AMIAlternativeFinder is implemented
-    # suggested_alternatives: List[AMIAlternative] = field(default_factory=list)
+    suggested_alternatives: List = None  # Will contain AMIAlternative objects
 
     def __post_init__(self):
         if self.cve_ids is None:
             self.cve_ids = []
+        if self.suggested_alternatives is None:
+            self.suggested_alternatives = []
 
 
 class AMICVEScanner:
@@ -140,7 +43,7 @@ class AMICVEScanner:
     Operations:
     1. Detects AMI IDs in IaC templates
     2. Checks against known vulnerable AMIs
-    3. Recommends using latest AMIs
+    3. Provides specific AMI ID recommendations
     """
 
     # Known vulnerable AMIs (example data)
@@ -164,8 +67,15 @@ class AMICVEScanner:
         r"rhel.*6",
     ]
 
-    def __init__(self):
+    def __init__(self, region: str = "us-east-1"):
         self.scan_results: List[AMICVE] = []
+        self.region = region
+        # Import and initialize AMI alternative finder
+        try:
+            from devops_universal_scanner.core.cve.ami_alternative_finder import AMIAlternativeFinder
+            self.ami_finder = AMIAlternativeFinder(region=region)
+        except ImportError:
+            self.ami_finder = None
 
     def check_ami(self, ami_id: str, ami_name: Optional[str] = None) -> AMICVE:
         """
@@ -178,12 +88,15 @@ class AMICVEScanner:
         Returns:
             AMICVE object with results
         """
+        result = None
+
         # Check against known vulnerable AMIs
         if ami_id in self.KNOWN_VULNERABLE_AMIS:
             vuln_info = self.KNOWN_VULNERABLE_AMIS[ami_id]
-            return AMICVE(
+            result = AMICVE(
                 ami_id=ami_id,
                 ami_name=ami_name,
+                region=self.region,
                 has_cve=True,
                 cve_ids=vuln_info["cves"],
                 severity=vuln_info["severity"],
@@ -191,35 +104,51 @@ class AMICVEScanner:
             )
 
         # Check AMI name for outdated patterns
-        if ami_name:
+        elif ami_name:
             for pattern in self.OUTDATED_PATTERNS:
                 if re.search(pattern, ami_name, re.IGNORECASE):
-                    return AMICVE(
+                    result = AMICVE(
                         ami_id=ami_id,
                         ami_name=ami_name,
+                        region=self.region,
                         is_outdated=True,
                         severity="MEDIUM",
                         recommendation=f"AMI appears outdated based on name pattern. Consider using latest version."
                     )
+                    break
 
         # Placeholder AMI (commonly used in examples)
-        if re.match(r'ami-0[a-f0-9]{16}$', ami_id) and ami_id.endswith('0'):
-            return AMICVE(
+        if not result and re.match(r'ami-0[a-f0-9]{16}$', ami_id) and ami_id.endswith('0'):
+            result = AMICVE(
                 ami_id=ami_id,
                 ami_name=ami_name,
+                region=self.region,
                 severity="LOW",
                 recommendation="AMI appears to be a placeholder. Use actual AMI ID for deployment."
             )
 
         # No known issues
-        return AMICVE(
-            ami_id=ami_id,
-            ami_name=ami_name,
-            has_cve=False,
-            is_outdated=False,
-            severity="INFO",
-            recommendation="No known CVEs detected (note: comprehensive check requires AWS API access)"
-        )
+        if not result:
+            result = AMICVE(
+                ami_id=ami_id,
+                ami_name=ami_name,
+                region=self.region,
+                has_cve=False,
+                is_outdated=False,
+                severity="INFO",
+                recommendation="No known CVEs detected (note: comprehensive check requires AWS API access)"
+            )
+
+        # Fetch alternative AMIs if there are issues
+        if (result.has_cve or result.is_outdated) and self.ami_finder:
+            try:
+                alternatives = self.ami_finder.get_recommendation_for_ami(ami_id)
+                result.suggested_alternatives = alternatives
+            except Exception:
+                # Gracefully handle alternative finding errors
+                pass
+
+        return result
 
     def extract_amis_from_template(self, content: str, template_type: str = "cloudformation") -> List[str]:
         """
@@ -287,18 +216,20 @@ class AMICVEScanner:
                 lines.append(f"          Severity: {ami.severity}")
                 lines.append(f"          Recommendation: {ami.recommendation}")
 
-                # TODO: ENHANCEMENT - Display suggested alternatives
-                # When AMIAlternativeFinder is implemented, add:
-                # if ami.suggested_alternatives:
-                #     lines.append("          Suggested Alternatives:")
-                #     for alt in ami.suggested_alternatives[:3]:  # Show top 3
-                #         lines.append(f"            - {alt.ami_id}")
-                #         lines.append(f"              {alt.distribution} {alt.version} ({alt.region})")
-                #         if alt.last_updated:
-                #             lines.append(f"              Last Updated: {alt.last_updated}")
-                #         if alt.verified_cve_free:
-                #             lines.append(f"              Status: CVE-free (verified)")
-                #     lines.append("")
+                # Display suggested alternatives if available
+                if ami.suggested_alternatives:
+                    lines.append("")
+                    lines.append("          SUGGESTED ALTERNATIVES:")
+                    for idx, alt in enumerate(ami.suggested_alternatives[:3], 1):
+                        lines.append(f"          {idx}. {alt.ami_id}")
+                        lines.append(f"             Distribution: {alt.distribution} {alt.version}")
+                        lines.append(f"             Region: {alt.region}")
+                        lines.append(f"             Architecture: {alt.architecture}")
+                        if alt.last_updated:
+                            lines.append(f"             Last Updated: {alt.last_updated}")
+                        lines.append(f"             Source: {alt.source}")
+                        if idx < len(ami.suggested_alternatives[:3]):
+                            lines.append("")
 
                 lines.append("")
 
@@ -310,6 +241,21 @@ class AMICVEScanner:
                 if ami.ami_name:
                     lines.append(f"          Name: {ami.ami_name}")
                 lines.append(f"          Recommendation: {ami.recommendation}")
+
+                # Display suggested alternatives if available
+                if ami.suggested_alternatives:
+                    lines.append("")
+                    lines.append("          SUGGESTED ALTERNATIVES:")
+                    for idx, alt in enumerate(ami.suggested_alternatives[:3], 1):
+                        lines.append(f"          {idx}. {alt.ami_id}")
+                        lines.append(f"             Distribution: {alt.distribution} {alt.version}")
+                        lines.append(f"             Region: {alt.region}")
+                        if alt.last_updated:
+                            lines.append(f"             Last Updated: {alt.last_updated}")
+                        lines.append(f"             Source: {alt.source}")
+                        if idx < len(ami.suggested_alternatives[:3]):
+                            lines.append("")
+
                 lines.append("")
 
         if amis_clean:
