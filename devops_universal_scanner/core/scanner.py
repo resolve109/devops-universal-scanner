@@ -252,6 +252,8 @@ class Scanner:
                 self.logger.tool_output(self.idle_detector.generate_idle_report())
 
             # 2. SECURITY SECTION (all security-related outputs together)
+            self.logger.section("Security Analysis", style="single")
+
             if security_insights:
                 self.logger.tool_output(self.security_checker.generate_security_report())
 
