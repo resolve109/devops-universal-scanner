@@ -103,6 +103,7 @@ LABEL maintainer="DevOps Security Team" \
 # NOTE: Node.js removed - not needed in pure Python engine
 # NOTE: libgcc added for rustworkx (Rust-compiled binaries)
 # NOTE: Trivy added back for comprehensive security scanning
+# NOTE: AWS CLI and Azure CLI added for AMI/image lookups
 RUN apk add --no-cache \
     bash \
     git \
@@ -112,7 +113,20 @@ RUN apk add --no-cache \
     openssl \
     libffi \
     libgcc \
+    python3 \
+    py3-pip \
+    groff \
+    less \
     && rm -rf /var/cache/apk/*
+
+# Install AWS CLI v2 (official method for Alpine)
+RUN apk add --no-cache aws-cli
+
+# Install Azure CLI (via pip since Alpine doesn't have official package)
+RUN pip3 install --no-cache-dir azure-cli==2.55.0 --break-system-packages
+
+# Verify CLIs are installed
+RUN aws --version && az --version
 
 # Copy Python virtual environment from builder
 COPY --from=builder /opt/venv /opt/venv

@@ -2,35 +2,25 @@
 AMI Alternative Finder
 Provides specific AMI ID recommendations as alternatives to vulnerable/outdated AMIs
 
-Features:
-1. AWS SSM Parameter Store via public API (NO credentials required)
-2. Canonical's Ubuntu Cloud Images API for latest Ubuntu AMIs
-3. Region-aware AMI recommendations
-4. Architecture-specific recommendations (x86_64, arm64)
-5. Static fallback when APIs unavailable
+Uses AWS CLI and Azure CLI for real-time image lookups:
+1. AWS CLI: `aws ec2 describe-images --owners amazon --profile default`
+2. Azure CLI: `az vm image list --all --publisher Canonical`
+3. GCP CLI: `gcloud compute images list --project ubuntu-os-cloud`
 """
 
 import json
-import re
+import subprocess
 from typing import List, Optional, Dict
-from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
 import logging
-
-# Optional imports
-try:
-    import requests
-    REQUESTS_AVAILABLE = True
-except ImportError:
-    REQUESTS_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 
 
 @dataclass
 class AMIAlternative:
-    """AMI alternative recommendation"""
+    """AMI/Image alternative recommendation"""
     ami_id: str
     name: str
     distribution: str
@@ -38,131 +28,256 @@ class AMIAlternative:
     region: str
     architecture: str = "x86_64"
     last_updated: Optional[str] = None
-    source: str = "AWS SSM"  # 'AWS SSM' or 'Fallback Database'
+    source: str = "AWS CLI"
 
 
 class AMIAlternativeFinder:
     """
-    Finds alternative AMI IDs for vulnerable/outdated AMIs
+    Finds alternative AMI IDs for vulnerable/outdated AMIs using CLI tools
 
     Supports:
-    - Amazon Linux 2023, Amazon Linux 2
-    - Ubuntu LTS versions
+    - AWS CLI for AMI lookups (--profile default)
+    - Azure CLI for VM image lookups
+    - GCP gcloud for compute image lookups
     - Multi-region support
-    - Graceful degradation when AWS API unavailable
     """
 
-    # AWS SSM Parameter Store paths for official AMIs
-    SSM_PARAMETERS = {
-        "amazon_linux_2023_x86_64": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-x86_64",
-        "amazon_linux_2023_arm64": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-default-arm64",
-        "amazon_linux_2_x86_64": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2",
-        "amazon_linux_2_arm64": "/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2",
-        "ubuntu_24_04_x86_64": "/aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp2/ami-id",
-        "ubuntu_22_04_x86_64": "/aws/service/canonical/ubuntu/server/22.04/stable/current/amd64/hvm/ebs-gp2/ami-id",
-        "ubuntu_20_04_x86_64": "/aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp2/ami-id",
-    }
-
-    # Canonical Ubuntu Cloud Images API
-    UBUNTU_CLOUD_IMAGES_API = "https://cloud-images.ubuntu.com/locator/ec2/releasesTable"
-
-    # Static fallback AMI database (updated 2025-01)
-    # Used when boto3 and requests are unavailable
-    STATIC_AMI_DATABASE = {
-        "us-east-1": {
-            "amazon_linux_2023_x86_64": "ami-0c02fb55c47d2f8f5",
-            "amazon_linux_2_x86_64": "ami-0c101f26f147fa7fd",
-            "ubuntu_24_04_x86_64": "ami-0e2c8caa4b6378d8c",
-            "ubuntu_22_04_x86_64": "ami-0c7217cdde317cfec",
-        },
-        "us-west-2": {
-            "amazon_linux_2023_x86_64": "ami-0c94855ba95c574c8",
-            "amazon_linux_2_x86_64": "ami-0d081196e3df05f4d",
-            "ubuntu_24_04_x86_64": "ami-0aff18ec83b712f05",
-            "ubuntu_22_04_x86_64": "ami-03f65b8614a860c29",
-        },
-        "us-east-2": {
-            "amazon_linux_2023_x86_64": "ami-0ea3c35c5c3284d82",
-            "ubuntu_22_04_x86_64": "ami-0fb653ca2d3203ac1",
-        },
-        "eu-west-1": {
-            "amazon_linux_2023_x86_64": "ami-0d71ea30463e0ff8d",
-            "ubuntu_22_04_x86_64": "ami-0905a3c97561e0b69",
-        },
-    }
-
-    def __init__(self, region: str = "us-east-1"):
+    def __init__(self, region: str = "us-east-1", aws_profile: str = "default"):
         """
         Initialize AMI Alternative Finder
 
         Args:
             region: AWS region for AMI lookups (default: us-east-1)
+            aws_profile: AWS CLI profile to use (default: default)
         """
         self.region = region
-        self.boto3_available = False
-        self.ssm_client = None
+        self.aws_profile = aws_profile
+        self.aws_available = self._check_aws_cli()
+        self.azure_available = self._check_azure_cli()
+        self.gcp_available = self._check_gcp_cli()
 
-        # Try to initialize boto3 for SSM access (anonymous, no credentials needed)
+        if self.aws_available:
+            logger.info(f"AMI Finder initialized with AWS CLI (region: {region}, profile: {aws_profile})")
+        else:
+            logger.warning("AWS CLI not available - AMI lookups will be limited")
+
+    def _check_aws_cli(self) -> bool:
+        """Check if AWS CLI is available"""
         try:
-            import boto3
-            from botocore.config import Config
-            from botocore import UNSIGNED
-
-            self.ssm_client = boto3.client(
-                'ssm',
-                region_name=region,
-                config=Config(signature_version=UNSIGNED)
+            result = subprocess.run(
+                ["aws", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5
             )
-            self.boto3_available = True
-            logger.info(f"AMI Finder initialized with boto3 (region: {region})")
-        except ImportError:
-            logger.warning("boto3 not available - will use HTTP fallback for AMI lookups")
-        except Exception as e:
-            logger.warning(f"Failed to initialize boto3 SSM client: {e}")
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
 
-    def _get_ami_from_ssm(self, parameter_path: str) -> Optional[str]:
+    def _check_azure_cli(self) -> bool:
+        """Check if Azure CLI is available"""
+        try:
+            result = subprocess.run(
+                ["az", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+
+    def _check_gcp_cli(self) -> bool:
+        """Check if GCP gcloud CLI is available"""
+        try:
+            result = subprocess.run(
+                ["gcloud", "--version"],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            return result.returncode == 0
+        except (FileNotFoundError, subprocess.TimeoutExpired):
+            return False
+
+    def _get_amazon_linux_amis(self, architecture: str = "x86_64") -> List[AMIAlternative]:
         """
-        Get AMI ID from AWS SSM Parameter Store (public, no auth required)
+        Get latest Amazon Linux AMIs using AWS CLI
 
         Args:
-            parameter_path: SSM parameter path
+            architecture: CPU architecture (x86_64 or arm64)
 
         Returns:
-            AMI ID or None if unavailable
+            List of AMIAlternative objects
         """
-        # Try boto3 first (fastest)
-        if self.ssm_client:
-            try:
-                response = self.ssm_client.get_parameter(Name=parameter_path)
-                ami_id = response['Parameter']['Value']
-                if ami_id.startswith('ami-'):
-                    logger.debug(f"Got AMI from SSM: {ami_id}")
-                    return ami_id
-            except Exception as e:
-                logger.debug(f"SSM parameter fetch failed: {e}")
+        if not self.aws_available:
+            logger.warning("AWS CLI not available")
+            return []
 
-        # Fallback to HTTP request to AWS SSM public API
-        if REQUESTS_AVAILABLE:
-            try:
-                # AWS SSM has a public HTTP endpoint we can query
-                url = f"https://ssm.{self.region}.amazonaws.com/"
-                params = {
-                    'Action': 'GetParameter',
-                    'Name': parameter_path,
-                    'Version': '2014-11-06'
-                }
-                response = requests.get(url, params=params, timeout=5)
-                if response.status_code == 200:
-                    # Parse XML response for AMI ID
-                    ami_match = re.search(r'ami-[a-f0-9]{8,17}', response.text)
-                    if ami_match:
-                        ami_id = ami_match.group(0)
-                        logger.debug(f"Got AMI from SSM HTTP: {ami_id}")
-                        return ami_id
-            except Exception as e:
-                logger.debug(f"HTTP SSM fetch failed: {e}")
+        alternatives = []
 
-        return None
+        # Map architecture to AWS filter format
+        arch_map = {"x86_64": "x86_64", "arm64": "arm64"}
+        aws_arch = arch_map.get(architecture, "x86_64")
+
+        try:
+            # Get Amazon Linux 2023 (latest)
+            cmd = [
+                "aws", "ec2", "describe-images",
+                "--owners", "amazon",
+                "--filters",
+                "Name=name,Values=al2023-ami-*",
+                f"Name=architecture,Values={aws_arch}",
+                "Name=root-device-type,Values=ebs",
+                "Name=virtualization-type,Values=hvm",
+                "--query", "Images | sort_by(@, &CreationDate) | [-1].[ImageId,Name,CreationDate]",
+                "--output", "json",
+                "--region", self.region,
+                "--profile", self.aws_profile
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                if data and len(data) > 0:
+                    ami_id, name, created = data[0], data[1] if len(data) > 1 else "Amazon Linux 2023", data[2] if len(data) > 2 else ""
+                    alternatives.append(AMIAlternative(
+                        ami_id=ami_id,
+                        name="Amazon Linux 2023 (Latest)",
+                        distribution="Amazon Linux 2023",
+                        version="2023",
+                        region=self.region,
+                        architecture=architecture,
+                        last_updated=created.split('T')[0] if created else datetime.utcnow().strftime('%Y-%m-%d'),
+                        source="AWS CLI"
+                    ))
+                    logger.debug(f"Found Amazon Linux 2023 AMI: {ami_id}")
+
+            # Get Amazon Linux 2 as fallback
+            cmd_al2 = [
+                "aws", "ec2", "describe-images",
+                "--owners", "amazon",
+                "--filters",
+                "Name=name,Values=amzn2-ami-hvm-*",
+                f"Name=architecture,Values={aws_arch}",
+                "Name=root-device-type,Values=ebs",
+                "Name=virtualization-type,Values=hvm",
+                "--query", "Images | sort_by(@, &CreationDate) | [-1].[ImageId,Name,CreationDate]",
+                "--output", "json",
+                "--region", self.region,
+                "--profile", self.aws_profile
+            ]
+
+            result_al2 = subprocess.run(
+                cmd_al2,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result_al2.returncode == 0:
+                data_al2 = json.loads(result_al2.stdout)
+                if data_al2 and len(data_al2) > 0:
+                    ami_id, name, created = data_al2[0], data_al2[1] if len(data_al2) > 1 else "Amazon Linux 2", data_al2[2] if len(data_al2) > 2 else ""
+                    alternatives.append(AMIAlternative(
+                        ami_id=ami_id,
+                        name="Amazon Linux 2 (Latest)",
+                        distribution="Amazon Linux 2",
+                        version="2",
+                        region=self.region,
+                        architecture=architecture,
+                        last_updated=created.split('T')[0] if created else datetime.utcnow().strftime('%Y-%m-%d'),
+                        source="AWS CLI"
+                    ))
+                    logger.debug(f"Found Amazon Linux 2 AMI: {ami_id}")
+
+        except subprocess.TimeoutExpired:
+            logger.error("AWS CLI command timed out")
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse AWS CLI output: {e}")
+        except Exception as e:
+            logger.error(f"Failed to get Amazon Linux AMIs: {e}")
+
+        return alternatives
+
+    def _get_ubuntu_amis(self, version: str = "22.04", architecture: str = "x86_64") -> List[AMIAlternative]:
+        """
+        Get latest Ubuntu LTS AMIs using AWS CLI
+
+        Args:
+            version: Ubuntu version (20.04, 22.04, 24.04)
+            architecture: CPU architecture (x86_64 or arm64)
+
+        Returns:
+            List of AMIAlternative objects
+        """
+        if not self.aws_available:
+            logger.warning("AWS CLI not available")
+            return []
+
+        alternatives = []
+
+        # Map architecture to AWS filter format
+        arch_map = {"x86_64": "x86_64", "arm64": "arm64"}
+        aws_arch = arch_map.get(architecture, "x86_64")
+
+        # Canonical's owner ID
+        canonical_owner = "099720109477"
+
+        try:
+            # Get latest Ubuntu LTS
+            version_clean = version.replace(".", "")  # 22.04 -> 2204
+            cmd = [
+                "aws", "ec2", "describe-images",
+                "--owners", canonical_owner,
+                "--filters",
+                f"Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-*-{version}-*-server-*",
+                f"Name=architecture,Values={aws_arch}",
+                "Name=root-device-type,Values=ebs",
+                "Name=virtualization-type,Values=hvm",
+                "--query", "Images | sort_by(@, &CreationDate) | [-1].[ImageId,Name,CreationDate]",
+                "--output", "json",
+                "--region", self.region,
+                "--profile", self.aws_profile
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0:
+                data = json.loads(result.stdout)
+                if data and len(data) > 0:
+                    ami_id, name, created = data[0], data[1] if len(data) > 1 else f"Ubuntu {version}", data[2] if len(data) > 2 else ""
+                    alternatives.append(AMIAlternative(
+                        ami_id=ami_id,
+                        name=f"Ubuntu Server {version} LTS (Latest)",
+                        distribution=f"Ubuntu Server {version} LTS",
+                        version=version,
+                        region=self.region,
+                        architecture=architecture,
+                        last_updated=created.split('T')[0] if created else datetime.utcnow().strftime('%Y-%m-%d'),
+                        source="AWS CLI"
+                    ))
+                    logger.debug(f"Found Ubuntu {version} AMI: {ami_id}")
+
+        except subprocess.TimeoutExpired:
+            logger.error("AWS CLI command timed out")
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse AWS CLI output: {e}")
+        except Exception as e:
+            logger.error(f"Failed to get Ubuntu AMIs: {e}")
+
+        return alternatives
 
     def find_alternatives(
         self,
@@ -171,7 +286,7 @@ class AMIAlternativeFinder:
         count: int = 3
     ) -> List[AMIAlternative]:
         """
-        Find alternative AMI recommendations from live web sources
+        Find alternative AMI recommendations using AWS CLI
 
         Args:
             distribution: Distribution name (amazon_linux_2023, ubuntu_24_04, etc.)
@@ -182,136 +297,24 @@ class AMIAlternativeFinder:
             List of AMIAlternative objects
         """
         alternatives = []
-        key = f"{distribution}_{architecture}"
 
-        # Try AWS SSM for Amazon/Ubuntu official AMIs
-        if key in self.SSM_PARAMETERS:
-            ami_id = self._get_ami_from_ssm(self.SSM_PARAMETERS[key])
-            if ami_id:
-                alternatives.append(AMIAlternative(
-                    ami_id=ami_id,
-                    name=self._get_friendly_name(distribution),
-                    distribution=self._get_friendly_name(distribution),
-                    version="Latest",
-                    region=self.region,
-                    architecture=architecture,
-                    last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
-                    source="AWS SSM Public API"
-                ))
+        # Route to appropriate CLI method based on distribution
+        if "amazon_linux" in distribution:
+            alternatives.extend(self._get_amazon_linux_amis(architecture))
+        elif "ubuntu" in distribution:
+            # Extract version from distribution name (ubuntu_24_04 -> 24.04)
+            version = distribution.replace("ubuntu_", "").replace("_", ".")
+            alternatives.extend(self._get_ubuntu_amis(version, architecture))
 
-        # Try Canonical Ubuntu Cloud Images API for Ubuntu
-        if "ubuntu" in distribution and len(alternatives) < count and REQUESTS_AVAILABLE:
-            ubuntu_amis = self._get_ubuntu_amis_from_web(distribution, architecture)
-            alternatives.extend(ubuntu_amis[:(count - len(alternatives))])
-
-        # If still no results, try static fallback database
-        if not alternatives and self.region in self.STATIC_AMI_DATABASE:
-            region_amis = self.STATIC_AMI_DATABASE[self.region]
-            if key in region_amis:
-                alternatives.append(AMIAlternative(
-                    ami_id=region_amis[key],
-                    name=self._get_friendly_name(distribution),
-                    distribution=self._get_friendly_name(distribution),
-                    version="Latest",
-                    region=self.region,
-                    architecture=architecture,
-                    last_updated="2025-01-15",
-                    source="Static Fallback Database"
-                ))
-
-        # If still no matches, provide popular alternatives
+        # If no specific distribution found, get popular alternatives
         if not alternatives:
             alternatives.extend(self._get_popular_alternatives(architecture))
 
         return alternatives[:count]
 
-    def _get_ubuntu_amis_from_web(self, distribution: str, architecture: str) -> List[AMIAlternative]:
-        """
-        Fetch latest Ubuntu AMI IDs from Canonical's Cloud Images API
-
-        Args:
-            distribution: Ubuntu distribution (e.g., "ubuntu_22_04")
-            architecture: CPU architecture (x86_64 or arm64)
-
-        Returns:
-            List of AMIAlternative objects
-        """
-        alternatives = []
-
-        if not REQUESTS_AVAILABLE:
-            logger.debug("requests not available - cannot fetch Ubuntu AMIs from web")
-            return alternatives
-
-        try:
-            # Canonical provides a JSON endpoint with current AMIs
-            # Parse version from distribution name
-            version = distribution.replace("ubuntu_", "").replace("_", ".")
-
-            response = requests.get(self.UBUNTU_CLOUD_IMAGES_API, timeout=10)
-            if response.status_code != 200:
-                logger.warning(f"Ubuntu Cloud Images API returned {response.status_code}")
-                return alternatives
-
-            # Parse JSON response
-            data = response.json()
-
-            # Filter for matching region, version, and architecture
-            arch_map = {"x86_64": "amd64", "arm64": "arm64"}
-            target_arch = arch_map.get(architecture, "amd64")
-
-            for item in data.get('aaData', []):
-                # Item format: [zone, name, version, arch, instance_type, release, ami_id, aki_id]
-                if len(item) < 7:
-                    continue
-
-                item_region = item[0]
-                item_version = item[2]
-                item_arch = item[3]
-                ami_id = item[6]
-
-                if (self.region in item_region and
-                    version in item_version and
-                    target_arch == item_arch and
-                    ami_id.startswith('ami-')):
-
-                    alternatives.append(AMIAlternative(
-                        ami_id=ami_id,
-                        name=f"Ubuntu Server {version} LTS",
-                        distribution=f"Ubuntu Server {version} LTS",
-                        version=item_version,
-                        region=self.region,
-                        architecture=architecture,
-                        last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
-                        source="Canonical Cloud Images API"
-                    ))
-
-                    if len(alternatives) >= 2:
-                        break
-
-        except Exception as e:
-            logger.warning(f"Failed to fetch Ubuntu AMIs from web: {e}")
-
-        return alternatives
-
-    def _get_friendly_name(self, distribution: str) -> str:
-        """Convert distribution key to friendly name"""
-        mapping = {
-            "amazon_linux_2023": "Amazon Linux 2023",
-            "amazon_linux_2": "Amazon Linux 2",
-            "ubuntu_24_04": "Ubuntu Server 24.04 LTS",
-            "ubuntu_22_04": "Ubuntu Server 22.04 LTS",
-            "ubuntu_20_04": "Ubuntu Server 20.04 LTS",
-        }
-        return mapping.get(distribution, distribution)
-
     def _get_popular_alternatives(self, architecture: str = "x86_64") -> List[AMIAlternative]:
         """
-        Get popular AMI alternatives from live web sources
-
-        Tries multiple sources:
-        1. Amazon Linux 2023 from AWS SSM
-        2. Ubuntu 22.04 LTS from AWS SSM or Canonical API
-        3. Static fallback if all APIs fail
+        Get popular AMI alternatives using AWS CLI
 
         Args:
             architecture: CPU architecture
@@ -321,78 +324,24 @@ class AMIAlternativeFinder:
         """
         popular = []
 
-        # 1. Amazon Linux 2023 (recommended default) from AWS SSM
-        al2023_key = f"amazon_linux_2023_{architecture}"
-        if al2023_key in self.SSM_PARAMETERS:
-            ami_id = self._get_ami_from_ssm(self.SSM_PARAMETERS[al2023_key])
-            if ami_id:
-                popular.append(AMIAlternative(
-                    ami_id=ami_id,
-                    name="Amazon Linux 2023 (Recommended)",
-                    distribution="Amazon Linux 2023",
-                    version="Latest",
-                    region=self.region,
-                    architecture=architecture,
-                    last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
-                    source="AWS SSM Public API"
-                ))
+        # Get Amazon Linux 2023 (recommended)
+        al2023 = self._get_amazon_linux_amis(architecture)
+        popular.extend(al2023)
 
-        # 2. Ubuntu 22.04 LTS from AWS SSM or Canonical API
-        if len(popular) < 2:
-            ubuntu_key = f"ubuntu_22_04_{architecture}"
-            if ubuntu_key in self.SSM_PARAMETERS:
-                ami_id = self._get_ami_from_ssm(self.SSM_PARAMETERS[ubuntu_key])
-                if ami_id:
-                    popular.append(AMIAlternative(
-                        ami_id=ami_id,
-                        name="Ubuntu Server 22.04 LTS",
-                        distribution="Ubuntu Server 22.04 LTS",
-                        version="22.04",
-                        region=self.region,
-                        architecture=architecture,
-                        last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
-                        source="AWS SSM Public API"
-                    ))
+        # Get Ubuntu 22.04 LTS
+        ubuntu = self._get_ubuntu_amis("22.04", architecture)
+        popular.extend(ubuntu)
 
-        # 3. If still no results, try Ubuntu from Canonical API
-        if not popular and REQUESTS_AVAILABLE:
-            ubuntu_amis = self._get_ubuntu_amis_from_web("ubuntu_22_04", architecture)
-            popular.extend(ubuntu_amis[:2])
-
-        # 4. If all APIs failed, use static fallback database
-        if not popular and self.region in self.STATIC_AMI_DATABASE:
-            region_amis = self.STATIC_AMI_DATABASE[self.region]
-            # Add Amazon Linux 2023
-            if al2023_key in region_amis:
-                popular.append(AMIAlternative(
-                    ami_id=region_amis[al2023_key],
-                    name="Amazon Linux 2023 (Recommended)",
-                    distribution="Amazon Linux 2023",
-                    version="Latest",
-                    region=self.region,
-                    architecture=architecture,
-                    last_updated="2025-01-15",
-                    source="Static Fallback Database"
-                ))
-            # Add Ubuntu 22.04
-            ubuntu_key = f"ubuntu_22_04_{architecture}"
-            if ubuntu_key in region_amis and len(popular) < 2:
-                popular.append(AMIAlternative(
-                    ami_id=region_amis[ubuntu_key],
-                    name="Ubuntu Server 22.04 LTS",
-                    distribution="Ubuntu Server 22.04 LTS",
-                    version="22.04",
-                    region=self.region,
-                    architecture=architecture,
-                    last_updated="2025-01-15",
-                    source="Static Fallback Database"
-                ))
+        # Get Ubuntu 24.04 LTS if we need more
+        if len(popular) < 3:
+            ubuntu24 = self._get_ubuntu_amis("24.04", architecture)
+            popular.extend(ubuntu24)
 
         return popular
 
     def get_recommendation_for_ami(self, ami_id: str) -> List[AMIAlternative]:
         """
-        Get recommendations for a specific AMI
+        Get recommendations for a specific AMI using AWS CLI
 
         Args:
             ami_id: AMI ID to find alternatives for
@@ -400,11 +349,105 @@ class AMIAlternativeFinder:
         Returns:
             List of AMIAlternative objects
         """
-        # Default to Amazon Linux 2023 (most common)
-        recommendations = self.find_alternatives("amazon_linux_2023", "x86_64", count=2)
+        # Get Amazon Linux 2023 (most recommended)
+        recommendations = self._get_amazon_linux_amis("x86_64")
 
-        # Add Ubuntu as alternative
-        ubuntu_alts = self.find_alternatives("ubuntu_24_04", "x86_64", count=1)
-        recommendations.extend(ubuntu_alts)
+        # Add Ubuntu 22.04
+        ubuntu = self._get_ubuntu_amis("22.04", "x86_64")
+        recommendations.extend(ubuntu)
+
+        # Add Ubuntu 24.04 if we need more
+        if len(recommendations) < 3:
+            ubuntu24 = self._get_ubuntu_amis("24.04", "x86_64")
+            recommendations.extend(ubuntu24)
 
         return recommendations[:3]
+
+    def get_azure_images(self, publisher: str = "Canonical", offer: str = "0001-com-ubuntu-server-jammy") -> List[Dict]:
+        """
+        Get Azure VM images using Azure CLI
+
+        Args:
+            publisher: Image publisher (default: Canonical)
+            offer: Image offer (default: Ubuntu 22.04)
+
+        Returns:
+            List of image dictionaries
+        """
+        if not self.azure_available:
+            logger.warning("Azure CLI not available")
+            return []
+
+        try:
+            cmd = [
+                "az", "vm", "image", "list",
+                "--publisher", publisher,
+                "--offer", offer,
+                "--all",
+                "--output", "json"
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0:
+                images = json.loads(result.stdout)
+                logger.debug(f"Found {len(images)} Azure images")
+                return images
+
+        except subprocess.TimeoutExpired:
+            logger.error("Azure CLI command timed out")
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse Azure CLI output: {e}")
+        except Exception as e:
+            logger.error(f"Failed to get Azure images: {e}")
+
+        return []
+
+    def get_gcp_images(self, project: str = "ubuntu-os-cloud", family: str = "ubuntu-2204-lts") -> List[Dict]:
+        """
+        Get GCP compute images using gcloud CLI
+
+        Args:
+            project: GCP project (default: ubuntu-os-cloud)
+            family: Image family (default: ubuntu-2204-lts)
+
+        Returns:
+            List of image dictionaries
+        """
+        if not self.gcp_available:
+            logger.warning("GCP gcloud CLI not available")
+            return []
+
+        try:
+            cmd = [
+                "gcloud", "compute", "images", "list",
+                "--project", project,
+                "--filter", f"family={family}",
+                "--format", "json"
+            ]
+
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode == 0:
+                images = json.loads(result.stdout)
+                logger.debug(f"Found {len(images)} GCP images")
+                return images
+
+        except subprocess.TimeoutExpired:
+            logger.error("gcloud CLI command timed out")
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse gcloud output: {e}")
+        except Exception as e:
+            logger.error(f"Failed to get GCP images: {e}")
+
+        return []
