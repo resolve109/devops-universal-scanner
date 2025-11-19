@@ -3,19 +3,23 @@ AMI Alternative Finder
 Provides specific AMI ID recommendations as alternatives to vulnerable/outdated AMIs
 
 Features:
-1. AWS SSM Parameter Store integration for official AMI IDs
-2. Region-aware AMI recommendations
-3. Fallback to curated AMI database when AWS API unavailable
+1. AWS SSM Parameter Store via public API (NO credentials required)
+2. Canonical's Ubuntu Cloud Images API for latest Ubuntu AMIs
+3. Region-aware AMI recommendations
 4. Architecture-specific recommendations (x86_64, arm64)
+5. 100% web-based - no fallback databases
 """
 
-import subprocess
+import requests
 import json
 import re
 from typing import List, Optional, Dict
 from pathlib import Path
 from dataclasses import dataclass
 from datetime import datetime
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -53,55 +57,8 @@ class AMIAlternativeFinder:
         "ubuntu_20_04_x86_64": "/aws/service/canonical/ubuntu/server/20.04/stable/current/amd64/hvm/ebs-gp2/ami-id",
     }
 
-    # Fallback AMI database (curated, updated monthly)
-    FALLBACK_AMIS = {
-        "us-east-1": {
-            "amazon_linux_2023_x86_64": {
-                "ami_id": "ami-0c02fb55c47d2f8f5",
-                "name": "Amazon Linux 2023",
-                "version": "2023.3.20250115",
-                "last_updated": "2025-01-15"
-            },
-            "amazon_linux_2_x86_64": {
-                "ami_id": "ami-0c101f26f147fa7fd",
-                "name": "Amazon Linux 2",
-                "version": "2.0.20250115",
-                "last_updated": "2025-01-15"
-            },
-            "ubuntu_24_04_x86_64": {
-                "ami_id": "ami-0e2c8caa4b6378d8c",
-                "name": "Ubuntu Server 24.04 LTS",
-                "version": "24.04",
-                "last_updated": "2025-01-15"
-            },
-            "ubuntu_22_04_x86_64": {
-                "ami_id": "ami-0c7217cdde317cfec",
-                "name": "Ubuntu Server 22.04 LTS",
-                "version": "22.04",
-                "last_updated": "2025-01-15"
-            }
-        },
-        "us-west-2": {
-            "amazon_linux_2023_x86_64": {
-                "ami_id": "ami-0c94855ba95c574c8",
-                "name": "Amazon Linux 2023",
-                "version": "2023.3.20250115",
-                "last_updated": "2025-01-15"
-            },
-            "amazon_linux_2_x86_64": {
-                "ami_id": "ami-0d081196e3df05f4d",
-                "name": "Amazon Linux 2",
-                "version": "2.0.20250115",
-                "last_updated": "2025-01-15"
-            },
-            "ubuntu_24_04_x86_64": {
-                "ami_id": "ami-0aff18ec83b712f05",
-                "name": "Ubuntu Server 24.04 LTS",
-                "version": "24.04",
-                "last_updated": "2025-01-15"
-            }
-        }
-    }
+    # Canonical Ubuntu Cloud Images API
+    UBUNTU_CLOUD_IMAGES_API = "https://cloud-images.ubuntu.com/locator/ec2/releasesTable"
 
     def __init__(self, region: str = "us-east-1"):
         """
@@ -111,24 +68,30 @@ class AMIAlternativeFinder:
             region: AWS region for AMI lookups (default: us-east-1)
         """
         self.region = region
-        self.aws_available = self._check_aws_cli()
+        self.boto3_available = False
+        self.ssm_client = None
 
-    def _check_aws_cli(self) -> bool:
-        """Check if AWS CLI is available and configured"""
+        # Try to initialize boto3 for SSM access (anonymous, no credentials needed)
         try:
-            result = subprocess.run(
-                ['aws', '--version'],
-                capture_output=True,
-                timeout=2,
-                text=True
+            import boto3
+            from botocore.config import Config
+            from botocore import UNSIGNED
+
+            self.ssm_client = boto3.client(
+                'ssm',
+                region_name=region,
+                config=Config(signature_version=UNSIGNED)
             )
-            return result.returncode == 0
-        except (FileNotFoundError, subprocess.TimeoutExpired):
-            return False
+            self.boto3_available = True
+            logger.info(f"AMI Finder initialized with boto3 (region: {region})")
+        except ImportError:
+            logger.warning("boto3 not available - will use HTTP fallback for AMI lookups")
+        except Exception as e:
+            logger.warning(f"Failed to initialize boto3 SSM client: {e}")
 
     def _get_ami_from_ssm(self, parameter_path: str) -> Optional[str]:
         """
-        Get AMI ID from AWS SSM Parameter Store
+        Get AMI ID from AWS SSM Parameter Store (public, no auth required)
 
         Args:
             parameter_path: SSM parameter path
@@ -136,29 +99,36 @@ class AMIAlternativeFinder:
         Returns:
             AMI ID or None if unavailable
         """
-        if not self.aws_available:
-            return None
-
-        try:
-            result = subprocess.run(
-                [
-                    'aws', 'ssm', 'get-parameter',
-                    '--name', parameter_path,
-                    '--region', self.region,
-                    '--query', 'Parameter.Value',
-                    '--output', 'text'
-                ],
-                capture_output=True,
-                timeout=5,
-                text=True
-            )
-
-            if result.returncode == 0:
-                ami_id = result.stdout.strip()
+        # Try boto3 first (fastest)
+        if self.ssm_client:
+            try:
+                response = self.ssm_client.get_parameter(Name=parameter_path)
+                ami_id = response['Parameter']['Value']
                 if ami_id.startswith('ami-'):
+                    logger.debug(f"Got AMI from SSM: {ami_id}")
                     return ami_id
-        except (subprocess.TimeoutExpired, Exception):
-            pass
+            except Exception as e:
+                logger.debug(f"SSM parameter fetch failed: {e}")
+
+        # Fallback to HTTP request to AWS SSM public API
+        try:
+            # AWS SSM has a public HTTP endpoint we can query
+            url = f"https://ssm.{self.region}.amazonaws.com/"
+            params = {
+                'Action': 'GetParameter',
+                'Name': parameter_path,
+                'Version': '2014-11-06'
+            }
+            response = requests.get(url, params=params, timeout=5)
+            if response.status_code == 200:
+                # Parse XML response for AMI ID
+                ami_match = re.search(r'ami-[a-f0-9]{8,17}', response.text)
+                if ami_match:
+                    ami_id = ami_match.group(0)
+                    logger.debug(f"Got AMI from SSM HTTP: {ami_id}")
+                    return ami_id
+        except Exception as e:
+            logger.debug(f"HTTP SSM fetch failed: {e}")
 
         return None
 
@@ -169,7 +139,7 @@ class AMIAlternativeFinder:
         count: int = 3
     ) -> List[AMIAlternative]:
         """
-        Find alternative AMI recommendations
+        Find alternative AMI recommendations from live web sources
 
         Args:
             distribution: Distribution name (amazon_linux_2023, ubuntu_24_04, etc.)
@@ -182,7 +152,7 @@ class AMIAlternativeFinder:
         alternatives = []
         key = f"{distribution}_{architecture}"
 
-        # Try AWS SSM first
+        # Try AWS SSM for Amazon/Ubuntu official AMIs
         if key in self.SSM_PARAMETERS:
             ami_id = self._get_ami_from_ssm(self.SSM_PARAMETERS[key])
             if ami_id:
@@ -194,30 +164,83 @@ class AMIAlternativeFinder:
                     region=self.region,
                     architecture=architecture,
                     last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
-                    source="AWS SSM"
+                    source="AWS SSM Public API"
                 ))
 
-        # Add fallback database entries
-        if self.region in self.FALLBACK_AMIS:
-            region_amis = self.FALLBACK_AMIS[self.region]
-            if key in region_amis:
-                ami_data = region_amis[key]
-                alternatives.append(AMIAlternative(
-                    ami_id=ami_data['ami_id'],
-                    name=ami_data['name'],
-                    distribution=ami_data['name'],
-                    version=ami_data['version'],
-                    region=self.region,
-                    architecture=architecture,
-                    last_updated=ami_data['last_updated'],
-                    source="Fallback Database"
-                ))
+        # Try Canonical Ubuntu Cloud Images API for Ubuntu
+        if "ubuntu" in distribution and len(alternatives) < count:
+            ubuntu_amis = self._get_ubuntu_amis_from_web(distribution, architecture)
+            alternatives.extend(ubuntu_amis[:(count - len(alternatives))])
 
-        # If no matches, provide popular alternatives
+        # If no matches, provide popular alternatives from web
         if not alternatives:
             alternatives.extend(self._get_popular_alternatives(architecture))
 
         return alternatives[:count]
+
+    def _get_ubuntu_amis_from_web(self, distribution: str, architecture: str) -> List[AMIAlternative]:
+        """
+        Fetch latest Ubuntu AMI IDs from Canonical's Cloud Images API
+
+        Args:
+            distribution: Ubuntu distribution (e.g., "ubuntu_22_04")
+            architecture: CPU architecture (x86_64 or arm64)
+
+        Returns:
+            List of AMIAlternative objects
+        """
+        alternatives = []
+
+        try:
+            # Canonical provides a JSON endpoint with current AMIs
+            # Parse version from distribution name
+            version = distribution.replace("ubuntu_", "").replace("_", ".")
+
+            response = requests.get(self.UBUNTU_CLOUD_IMAGES_API, timeout=10)
+            if response.status_code != 200:
+                logger.warning(f"Ubuntu Cloud Images API returned {response.status_code}")
+                return alternatives
+
+            # Parse JSON response
+            data = response.json()
+
+            # Filter for matching region, version, and architecture
+            arch_map = {"x86_64": "amd64", "arm64": "arm64"}
+            target_arch = arch_map.get(architecture, "amd64")
+
+            for item in data.get('aaData', []):
+                # Item format: [zone, name, version, arch, instance_type, release, ami_id, aki_id]
+                if len(item) < 7:
+                    continue
+
+                item_region = item[0]
+                item_version = item[2]
+                item_arch = item[3]
+                ami_id = item[6]
+
+                if (self.region in item_region and
+                    version in item_version and
+                    target_arch == item_arch and
+                    ami_id.startswith('ami-')):
+
+                    alternatives.append(AMIAlternative(
+                        ami_id=ami_id,
+                        name=f"Ubuntu Server {version} LTS",
+                        distribution=f"Ubuntu Server {version} LTS",
+                        version=item_version,
+                        region=self.region,
+                        architecture=architecture,
+                        last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
+                        source="Canonical Cloud Images API"
+                    ))
+
+                    if len(alternatives) >= 2:
+                        break
+
+        except Exception as e:
+            logger.warning(f"Failed to fetch Ubuntu AMIs from web: {e}")
+
+        return alternatives
 
     def _get_friendly_name(self, distribution: str) -> str:
         """Convert distribution key to friendly name"""
@@ -231,10 +254,22 @@ class AMIAlternativeFinder:
         return mapping.get(distribution, distribution)
 
     def _get_popular_alternatives(self, architecture: str = "x86_64") -> List[AMIAlternative]:
-        """Get popular AMI alternatives when specific match not found"""
+        """
+        Get popular AMI alternatives from live web sources
+
+        Tries multiple sources:
+        1. Amazon Linux 2023 from AWS SSM
+        2. Ubuntu 22.04 LTS from AWS SSM or Canonical API
+
+        Args:
+            architecture: CPU architecture
+
+        Returns:
+            List of AMIAlternative objects from live sources
+        """
         popular = []
 
-        # Amazon Linux 2023 (recommended default)
+        # 1. Amazon Linux 2023 (recommended default) from AWS SSM
         al2023_key = f"amazon_linux_2023_{architecture}"
         if al2023_key in self.SSM_PARAMETERS:
             ami_id = self._get_ami_from_ssm(self.SSM_PARAMETERS[al2023_key])
@@ -246,25 +281,31 @@ class AMIAlternativeFinder:
                     version="Latest",
                     region=self.region,
                     architecture=architecture,
-                    source="AWS SSM"
+                    last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
+                    source="AWS SSM Public API"
                 ))
 
-        # Fallback to database if AWS SSM failed
-        if not popular and self.region in self.FALLBACK_AMIS:
-            for key, data in self.FALLBACK_AMIS[self.region].items():
-                if architecture in key:
+        # 2. Ubuntu 22.04 LTS from AWS SSM or Canonical API
+        if len(popular) < 2:
+            ubuntu_key = f"ubuntu_22_04_{architecture}"
+            if ubuntu_key in self.SSM_PARAMETERS:
+                ami_id = self._get_ami_from_ssm(self.SSM_PARAMETERS[ubuntu_key])
+                if ami_id:
                     popular.append(AMIAlternative(
-                        ami_id=data['ami_id'],
-                        name=data['name'],
-                        distribution=data['name'],
-                        version=data['version'],
+                        ami_id=ami_id,
+                        name="Ubuntu Server 22.04 LTS",
+                        distribution="Ubuntu Server 22.04 LTS",
+                        version="22.04",
                         region=self.region,
                         architecture=architecture,
-                        last_updated=data['last_updated'],
-                        source="Fallback Database"
+                        last_updated=datetime.utcnow().strftime('%Y-%m-%d'),
+                        source="AWS SSM Public API"
                     ))
-                    if len(popular) >= 2:
-                        break
+
+        # 3. If still no results, try Ubuntu from Canonical API
+        if not popular:
+            ubuntu_amis = self._get_ubuntu_amis_from_web("ubuntu_22_04", architecture)
+            popular.extend(ubuntu_amis[:2])
 
         return popular
 
